@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>검룡소 지도 | GPS 아이콘 표시 버전</title>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- MarkerCluster -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<style>
+  html, body { height:100%; margin:0; }
+  #map { width:100%; height:100dvh; }
+
+  .filter-panel {
+    position:absolute; left:10px; top:10px; z-index:1000;
+    background:rgba(255,255,255,0.95); padding:6px 8px; border-radius:8px;
+    box-shadow:0 2px 4px rgba(0,0,0,0.25);
+    display:inline-flex; flex-direction:column; gap:3px;
+    font-size:14px; width:fit-content;
+  }
+  label { display:flex; align-items:center; gap:4px; white-space:nowrap; }
+
+  .floating-btn {
+    position:absolute; bottom:20px; right:20px; z-index:1200;
+    width:52px; height:52px; border-radius:50%; background:#0078ff; color:#fff;
+    font-size:26px; font-weight:bold; border:none;
+    box-shadow:0 3px 8px rgba(0,0,0,0.3);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:0.2s;
+  }
+  .floating-btn:hover { background:#005fcc; transform:scale(1.05); }
+
+  .toast {
+    position:fixed; bottom:90px; right:20px; z-index:2000;
+    background:rgba(0,0,0,0.8); color:#fff;
+    padding:10px 14px; border-radius:6px; font-size:14px;
+    opacity:0; pointer-events:none; transition:opacity .3s ease;
+  }
+  .toast.show { opacity:1; }
+
+  .leaflet-tooltip.station-tooltip {
+    font-weight:bold; font-size:14px; color:#222;
+    text-shadow:1px 1px 2px #fff;
+  }
+</style>
+</head>
+<body>
+
+<div class="filter-panel">
+  <label><input type="checkbox" id="showSmall" checked onchange="filterMarkers()"> 소규모</label>
+  <label><input type="checkbox" id="showStream" checked onchange="filterMarkers()"> 하천</label>
+  <label><input type="checkbox" id="showStation" checked onchange="filterMarkers()"> 측정소</label>
+</div>
+
+<div id="map"></div>
+
+<button class="floating-btn gps-btn" onclick="toggleTracking()">📍</button>
+<div class="toast" id="toast">📡 위치 기능</div>
+
+<script>
+const GIST_URL = "https://gist.githubusercontent.com/phattonly1/9309e6ef4dd423e20628a28512edf12b/raw/facilities.json";
+
+const map = L.map("map", { zoomControl:false, preferCanvas:true }).setView([37.2275,128.91861], 15);
+L.control.zoom({position:'topright'}).addTo(map);
+
+const markerClusterGroup = L.markerClusterGroup();
+let facilities=[], markers=[];
+let myLocationMarker=null, watchId=null, tracking=false;
+
+// 타일
+const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM & CARTO'}).addTo(map);
+const osm   = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OSM'});
+const hot   = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{attribution:'&copy; OSM HOT'});
+L.control.layers({"Carto":carto,"OSM":osm,"HOT":hot}, null, {position:'topright'}).addTo(map);
+
+const typeConfig = {
+  station:{color:'#ff6600',radius:8},
+  small:{color:'#33bbff',radius:10},
+  stream:{color:'#3399ff',radius:12},
+  default:{color:'#666',radius:8}
+};
+const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+const tooltipOption = isMobile ? {permanent:false} : {permanent:true,className:'station-tooltip',direction:'top',offset:[0,-10]};
+
+// 내 위치 아이콘
+const myIcon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41]
+});
+
+function createMarker(f){
+  const c = typeConfig[f.type] || typeConfig.default;
+  return L.circleMarker([f.lat,f.lng], {
+    radius:c.radius, color:'#000', weight:1, fillColor:c.color, fillOpacity:0.85
+  }).bindTooltip(f.name, tooltipOption);
+}
+
+function refreshMarkers(){
+  markerClusterGroup.clearLayers();
+  markers = facilities.map(f => ({ layer:createMarker(f), type:f.type }));
+  filterMarkers();
+  map.addLayer(markerClusterGroup);
+}
+
+function filterMarkers(){
+  const showSmall   = document.getElementById("showSmall").checked;
+  const showStream  = document.getElementById("showStream").checked;
+  const showStation = document.getElementById("showStation").checked;
+  markerClusterGroup.clearLayers();
+  markers.forEach(m=>{
+    if ((m.type==='small'&&showSmall) || (m.type==='stream'&&showStream) || (m.type==='station'&&showStation)) {
+      markerClusterGroup.addLayer(m.layer);
+    }
+  });
+}
+
+async function loadFacilities(){
+  try{
+    const res = await fetch(GIST_URL, { cache:"no-store" });
+    if (!res.ok) throw new Error("불러오기 실패");
+    facilities = await res.json();
+    refreshMarkers();
+    // 초기 보정
+    setTimeout(()=>map.invalidateSize(), 0);
+  } catch(e){
+    console.error(e);
+    showToast("⚠️ 데이터 불러오기 실패");
+  }
+}
+loadFacilities();
+
+// GPS 추적
+function toggleTracking(){
+  const gpsBtn = document.querySelector(".gps-btn");
+  if (tracking){
+    navigator.geolocation.clearWatch(watchId);
+    tracking=false;
+    gpsBtn.textContent="⚪";
+    gpsBtn.style.background="#777";
+    showToast("🛑 실시간 추적 종료");
+  } else {
+    if (!navigator.geolocation){ showToast("⚠️ GPS 미지원"); return; }
+    watchId = navigator.geolocation.watchPosition(
+      pos=>{
+        const { latitude:lat, longitude:lng } = pos.coords;
+        if (myLocationMarker) map.removeLayer(myLocationMarker);
+        myLocationMarker = L.marker([lat,lng], { icon: myIcon })
+          .bindPopup("📍 내 위치").addTo(map);
+        map.flyTo([lat,lng],14);
+      },
+      err=>{
+        showToast("⚠️ 위치 접근 실패");
+        gpsBtn.textContent="⚪"; gpsBtn.style.background="#777";
+      },
+      { enableHighAccuracy:true, maximumAge:5000, timeout:10000 }
+    );
+    tracking=true;
+    gpsBtn.textContent="🔵";
+    gpsBtn.style.background="#00b894";
+    showToast("📡 실시간 추적 시작");
+  }
+}
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 1500);
+}
+
+// iframe 안에서 초기 표시가 늦게 되는 브라우저 보정
+window.addEventListener('load', ()=> setTimeout(()=>map.invalidateSize(), 0));
+window.addEventListener('resize', ()=> map.invalidateSize());
+</script>
+</body>
+</html>
