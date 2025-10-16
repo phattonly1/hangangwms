@@ -23,7 +23,7 @@ html,body{margin:0;padding:0;font-family:ui-sans-serif,system-ui,Apple SD Gothic
 .btn.primary{background:var(--accent);color:#fff}
 .btn.ghost{background:#fff;color:var(--accent);border:1px solid #93c5fd}
 .btn.danger{background:#dc2626;color:#fff}
-.input,.select{padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:#fff}
+.input,.select,textarea{padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:#fff}
 .muted{color:var(--muted);font-size:13px}
 /* 카드형 테이블 컨테이너 */
 .card{background:var(--panel);border:1px solid var(--bd);border-radius:14px;overflow:auto;box-shadow:0 10px 30px rgba(16,24,40,.06)}
@@ -40,18 +40,38 @@ tbody tr:hover{background:#f9fbff}
 /* 페이지네이션 */
 .pagination{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:12px 0}
 .page-btn{padding:8px 12px;border:1px solid var(--bd);border-radius:10px;background:#fff;cursor:pointer}
-/* 모달 */
+/* 모달(리디자인) */
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);align-items:center;justify-content:center;z-index:100}
 .modal.show{display:flex}
-.panel{background:#fff;border-radius:14px;padding:16px 16px 12px;min-width:320px;width:min(92vw,460px);box-shadow:0 20px 60px rgba(0,0,0,.25)}
-.field{display:flex;flex-direction:column;gap:6px;margin:8px 0}
-.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+.panel{background:#fff;border-radius:16px;padding:18px 18px 14px;width:min(92vw,720px);box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.panel h3{margin:0 0 12px;font-weight:900}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field small{color:var(--muted)}
+.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+@media (max-width:640px){
+  .form-grid{grid-template-columns:1fr}
+}
 /* 저장중 오버레이 + 토스트 */
 .saving{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:120}
 .saving.hidden{display:none}
 .saving .box{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:18px 20px;font-weight:800;box-shadow:0 10px 30px rgba(0,0,0,.2)}
 .toast{position:fixed;right:16px;bottom:16px;background:rgba(0,0,0,.85);color:#fff;padding:10px 12px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:150}
 .toast.show{opacity:1}
+/* 모바일 카드뷰 */
+.cards{display:none}
+.card-item{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.card-title{font-weight:900}
+.card-sub{color:#64748b;font-size:12px}
+.card-mid{margin:6px 0 10px;font-size:15px}
+.card-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.card-actions .select{min-width:120px;padding:8px 10px}
+.card-actions .btn{padding:8px 10px}
+@media (max-width:640px){
+  .card table{display:none}
+  .cards{display:grid;gap:10px}
+}
 </style>
 </head>
 <body>
@@ -72,7 +92,6 @@ tbody tr:hover{background:#f9fbff}
       <table id="tbl">
         <thead>
           <tr>
-            <!-- 화면에는 ID 숨김 -->
             <th data-k="요청일">요청일</th>
             <th data-k="요청자">요청자</th>
             <th data-k="요청물품">요청물품</th>
@@ -89,6 +108,9 @@ tbody tr:hover{background:#f9fbff}
       </table>
     </div>
 
+    <!-- 모바일 카드 리스트 -->
+    <div id="cards" class="cards" aria-live="polite"></div>
+
     <div class="pagination">
       <button class="page-btn" id="prev">이전</button>
       <span id="pageinfo" class="muted">0 / 0</span>
@@ -99,33 +121,36 @@ tbody tr:hover{background:#f9fbff}
   <!-- 추가/수정 모달 -->
   <div class="modal" id="modal" aria-modal="true" role="dialog" aria-labelledby="modalTitle">
     <div class="panel">
-      <h3 id="modalTitle" style="margin:0 0 8px 0;font-weight:900">요청 추가</h3>
+      <h3 id="modalTitle">요청 추가</h3>
       <form id="postForm" method="POST" target="hidden_iframe">
         <input type="hidden" name="op" value="add" />
         <input type="hidden" name="id" value="" />
-        <div class="field">
-          <label for="f_date">요청일</label>
-          <input id="f_date" type="date" name="date" required />
-        </div>
-        <div class="field">
-          <label for="f_who">요청자</label>
-          <input id="f_who" type="text" name="who" placeholder="요청자" required />
-        </div>
-        <div class="field">
-          <label for="f_item">요청물품</label>
-          <input id="f_item" type="text" name="item" placeholder="요청물품" required />
-        </div>
-        <div class="field">
-          <label for="f_qty">개수</label>
-          <input id="f_qty" type="number" name="qty" min="1" step="1" required />
-        </div>
-        <div class="field">
-          <label for="f_status">진행상태</label>
-          <select id="f_status" name="status" required>
-            <option>요청</option>
-            <option>진행중</option>
-            <option>완료</option>
-          </select>
+        <div class="form-grid">
+          <div class="field">
+            <label for="f_date">요청일</label>
+            <input id="f_date" type="date" name="date" required />
+            <small>오늘 날짜는 자동 선택되지 않아요.</small>
+          </div>
+          <div class="field">
+            <label for="f_who">요청자</label>
+            <input id="f_who" type="text" name="who" placeholder="요청자" required />
+          </div>
+          <div class="field">
+            <label for="f_item">요청물품</label>
+            <input id="f_item" type="text" name="item" placeholder="요청물품" required />
+          </div>
+          <div class="field">
+            <label for="f_qty">개수</label>
+            <input id="f_qty" type="number" name="qty" min="1" step="1" required />
+          </div>
+          <div class="field">
+            <label for="f_status">진행상태</label>
+            <select id="f_status" name="status" required>
+              <option>요청</option>
+              <option>진행중</option>
+              <option>완료</option>
+            </select>
+          </div>
         </div>
         <div class="actions">
           <button type="button" class="btn ghost" id="btnCancel">취소</button>
@@ -161,14 +186,11 @@ const toast = (t)=>{ const el=$("#toast"); el.textContent=t; el.classList.add("s
 /* 날짜 포맷터: YYYY-MM-DD */
 function ymd(dateLike){
   if (dateLike == null || dateLike === "") return "";
-  // 문자열 포맷 값이 이미 yyyy-mm-dd인 경우
   if (typeof dateLike === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateLike)) return dateLike;
-  // Date 생성 시도
   try{
     const d = new Date(dateLike);
     if (!isNaN(d)) return d.toISOString().slice(0,10);
-  }catch(_){ }
-  // "YYYY.MM.DD" 등 기타 → 하이픈 치환 후 재시도
+  }catch(_){}
   if (typeof dateLike === "string") {
     const s = dateLike.replace(/[./\s]/g, "-");
     const d = new Date(s);
@@ -190,6 +212,7 @@ function badge(v){
 function load(){
   const old = document.getElementById("gviz"); if (old) old.remove();
   $("#tbody").innerHTML = '<tr><td colspan="8">불러오는 중...</td></tr>';
+  $("#cards").innerHTML = '';
   const s = document.createElement("script");
   s.id = "gviz";
   s.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json;responseHandler:renderGViz&_=${Date.now()}`;
@@ -200,7 +223,7 @@ function load(){
 window.renderGViz = function(resp){
   try{
     const table = resp.table;
-    // 각 셀 객체(c)에 대해: c.f(포맷된 문자열)가 있으면 우선 사용
+    // 각 셀: c.f(포맷 문자열) 우선
     const rows = (table.rows||[]).map(r => (r.c||[]).map(c => c ? (c.f ?? c.v) : ""));
     const cols = (table.cols||[]).map(c => c?.label || "");
 
@@ -220,9 +243,7 @@ window.renderGViz = function(resp){
       요청물품 : cells[idx.item],
       개수     : cells[idx.qty],
       진행사항 : cells[idx.stat],
-    }))
-    // 비어있는 행 제거
-    .filter(r => (r.요청자 || r.요청물품));
+    })).filter(r => (r.요청자 || r.요청물품));
 
     applyAndRender();
   }catch(e){
@@ -235,11 +256,7 @@ function applyAndRender(){
   // 정렬
   view = [...raw].sort((a,b)=>{
     let A=a[sortKey], B=b[sortKey];
-    if (sortKey === "요청일"){
-      // 문자열 YYYY-MM-DD 기준 비교
-      return (sortDir==='asc') ? (A > B ? 1 : -1) : (A < B ? 1 : -1);
-    }
-    // 문자열 비교
+    if (sortKey === "요청일") return (sortDir==='asc') ? (A>B?1:-1) : (A<B?1:-1);
     A = (A ?? "").toString(); B = (B ?? "").toString();
     return (sortDir==='asc') ? A.localeCompare(B,'ko') : B.localeCompare(A,'ko');
   });
@@ -251,36 +268,96 @@ function applyAndRender(){
   $("#pageinfo").textContent = `${page} / ${total}`;
   $("#summary").textContent = `총 ${view.length}건`;
 
-  // 테이블 렌더 (ID는 data-id로만 보관)
+  // 표 렌더
   const tbody = $("#tbody");
   if (!slice.length){
     tbody.innerHTML = '<tr><td colspan="8">데이터가 없습니다.</td></tr>';
-    return;
+  } else {
+    tbody.innerHTML = slice.map(r => `
+      <tr data-id="${r.ID ?? ""}">
+        <td>${r.요청일 ?? ""}</td>
+        <td>${r.요청자 ?? ""}</td>
+        <td>${r.요청물품 ?? ""}</td>
+        <td>${r.개수 ?? ""}</td>
+        <td>${badge(r.진행사항)}</td>
+        <td>
+          <select class="select" data-quick="${r.ID ?? ""}">
+            <option ${r.진행사항==='요청'?'selected':''}>요청</option>
+            <option ${r.진행사항==='진행중'?'selected':''}>진행중</option>
+            <option ${r.진행사항==='완료'?'selected':''}>완료</option>
+          </select>
+          <button class="btn ghost" style="padding:6px 10px" data-save="${r.ID ?? ""}">변경</button>
+        </td>
+        <td><button class="btn" style="padding:6px 10px" data-edit="${r.ID ?? ""}">수정</button></td>
+        <td><button class="btn danger" style="padding:6px 10px" data-del="${r.ID ?? ""}">삭제</button></td>
+      </tr>
+    `).join("");
   }
 
-  const rowsHTML = slice.map(r => `
-    <tr data-id="${r.ID ?? ""}">
-      <td>${r.요청일 ?? ""}</td>
-      <td>${r.요청자 ?? ""}</td>
-      <td>${r.요청물품 ?? ""}</td>
-      <td>${r.개수 ?? ""}</td>
-      <td>${badge(r.진행사항)}</td>
-      <td>
-        <select class="select" data-quick="${r.ID ?? ""}">
-          <option ${r.진행사항==='요청'?'selected':''}>요청</option>
-          <option ${r.진행사항==='진행중'?'selected':''}>진행중</option>
-          <option ${r.진행사항==='완료'?'selected':''}>완료</option>
-        </select>
-        <button class="btn ghost" style="padding:6px 10px" data-save="${r.ID ?? ""}">변경</button>
-      </td>
-      <td><button class="btn" style="padding:6px 10px" data-edit="${r.ID ?? ""}">수정</button></td>
-      <td><button class="btn danger" style="padding:6px 10px" data-del="${r.ID ?? ""}">삭제</button></td>
-    </tr>
-  `).join("");
+  // 모바일 카드 렌더
+  const cards = document.getElementById('cards');
+  if (cards){
+    if (!slice.length){
+      cards.innerHTML = '<div class="muted">데이터가 없습니다.</div>';
+    } else {
+      const frag = document.createDocumentFragment();
+      slice.forEach(r=>{
+        const el = document.createElement('div');
+        el.className = 'card-item';
+        el.innerHTML = `
+          <div class="card-top">
+            <div class="card-title">${r.요청물품 ?? ''}</div>
+            <div class="card-sub">${r.요청일 ?? ''}</div>
+          </div>
+          <div class="card-mid">
+            <div><b>요청자</b> · ${r.요청자 ?? ''}</div>
+            <div><b>개수</b> · ${r.개수 ?? ''}</div>
+            <div><b>상태</b> · ${r.진행사항 ?? ''}</div>
+          </div>
+          <div class="card-actions">
+            <span>${badge(r.진행사항)}</span>
+            <select class="select" data-quick-m="${r.ID ?? ''}">
+              <option ${r.진행사항==='요청'?'selected':''}>요청</option>
+              <option ${r.진행사항==='진행중'?'selected':''}>진행중</option>
+              <option ${r.진행사항==='완료'?'selected':''}>완료</option>
+            </select>
+            <button class="btn ghost" data-save-m="${r.ID ?? ''}">변경</button>
+            <button class="btn" data-edit-m="${r.ID ?? ''}">수정</button>
+            <button class="btn danger" data-del-m="${r.ID ?? ''}">삭제</button>
+          </div>
+        `;
+        frag.appendChild(el);
+      });
+      cards.innerHTML = '';
+      cards.appendChild(frag);
 
-  tbody.innerHTML = rowsHTML;
+      // 모바일 카드 이벤트
+      cards.querySelectorAll('[data-save-m]').forEach(b=>{
+        b.onclick = ()=>{
+          const id = b.getAttribute('data-save-m');
+          const val = cards.querySelector(`select[data-quick-m="${id}"]`).value;
+          if (!id) return toast('ID 누락으로 변경 불가');
+          quickUpdate(id, val);
+        };
+      });
+      cards.querySelectorAll('[data-edit-m]').forEach(b=>{
+        b.onclick = ()=>{
+          const id = b.getAttribute('data-edit-m');
+          const full = raw.find(x=>String(x.ID)===String(id));
+          if (full) openModal('update', full); else toast('항목을 찾을 수 없습니다.');
+        };
+      });
+      cards.querySelectorAll('[data-del-m]').forEach(b=>{
+        b.onclick = ()=>{
+          const id = b.getAttribute('data-del-m');
+          if (!id) return toast('ID 누락으로 삭제 불가');
+          if (confirm('해당 항목을 삭제할까요?')) quickDelete(id);
+        };
+      });
+    }
+  }
 
-  // 이벤트 바인딩
+  // 테이블 이벤트
   tbody.querySelectorAll("[data-save]").forEach(btn=>{
     btn.onclick = ()=>{
       const id = btn.getAttribute("data-save");
@@ -300,7 +377,7 @@ function applyAndRender(){
     btn.onclick = ()=>{
       const id = btn.getAttribute("data-del");
       if (!id) return toast("ID 누락으로 삭제할 수 없습니다.");
-      if (confirm(`해당 항목을 삭제할까요? (ID: ${id})`)) quickDelete(id);
+      if (confirm(`해당 항목을 삭제할까요?`)) quickDelete(id);
     };
   });
 }
@@ -377,25 +454,24 @@ function quickDelete(id){
 }
 
 /* === 페이지네이션/정렬/기타 === */
-document.getElementById("prev").onclick = ()=>{ if(page>1){ page--; applyAndRender(); } };
-document.getElementById("next").onclick = ()=>{ page++; applyAndRender(); };
+document.getElementById("prev").onclick=()=>{ if(page>1){ page--; applyAndRender(); } };
+document.getElementById("next").onclick=()=>{ page++; applyAndRender(); };
 document.querySelectorAll('th[data-k]').forEach(th=>{
-  th.onclick = ()=>{
-    const k = th.getAttribute('data-k');
-    if (sortKey === k) sortDir = (sortDir === "asc" ? "desc" : "asc");
-    else { sortKey = k; sortDir = "asc"; }
+  th.style.cursor='pointer';
+  th.onclick=()=>{
+    const k=th.getAttribute('data-k');
+    if (sortKey===k) sortDir = (sortDir==='asc'?'desc':'asc');
+    else { sortKey=k; sortDir='asc'; }
     applyAndRender();
   };
 });
-document.getElementById("btnReload").onclick = load;
-document.getElementById("btnCSV").onclick = ()=>{
-  const header = ["요청일","요청자","요청물품","개수","진행상태"];
-  const rows = view.map(r => [r.요청일, r.요청자, r.요청물품, r.개수, r.진행사항]);
-  const csv = [header].concat(rows).map(a=>a.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `requests_${new Date().toISOString().slice(0,10)}.csv`; a.click();
-  URL.revokeObjectURL(url);
+document.getElementById("btnReload").onclick=load;
+document.getElementById("btnCSV").onclick=()=>{
+  const header=['요청일','요청자','요청물품','개수','진행상태'];
+  const rows=view.map(r=>[r.요청일,r.요청자,r.요청물품,r.개수,r.진행사항]);
+  const csv=[header].concat(rows).map(a=>a.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`requests_${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);
 };
 
 /* 초기 로드 */
