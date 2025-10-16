@@ -13,56 +13,266 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <style>
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Roboto, sans-serif;
-  background-color: #f5f6fa;
+  :root { --TAB-H: 48px; }
+
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background-color: #f5f6fa;
+  }
+
+  /* 상단 탭 */
+  .tab-container {
+    display: flex;
+    background: #2c3e50;
+    color: white;
+    height: var(--TAB-H);
+    align-items: center;
+    justify-content: center;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px 0;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+  }
+  .tab:hover { background: #34495e; }
+  .tab.active {
+    background: #1abc9c;
+    border-bottom: 3px solid #16a085;
+  }
+
+  /* 페이지 컨테이너: 높이를 확실하게 지정 */
+  .page {
+    display: none;
+    height: calc(100dvh - var(--TAB-H));
+    /* Safari 등에서 vh 이슈 회피용 최소 높이 */
+    min-height: calc(100vh - var(--TAB-H));
+    position: relative; /* 내부 absolute 요소 기준 */
+    overflow: hidden;
+  }
+  .page.active { display: block; }
+
+  /* 지도 */
+  #map { width: 100%; height: 100%; }
+
+  /* 필터/버튼/토스트 */
+  .filter-panel {
+    position:absolute; left:10px; top:10px; z-index:1000;
+    background:rgba(255,255,255,0.95);
+    padding:6px 8px; border-radius:8px;
+    box-shadow:0 2px 4px rgba(0,0,0,0.25);
+    display:inline-flex; flex-direction:column; gap:3px;
+    font-size:14px; width:fit-content;
+  }
+  label { display:flex; align-items:center; gap:4px; white-space:nowrap; }
+
+  .floating-btn {
+    position:absolute; bottom:20px; right:20px;
+    z-index:1200; width:52px; height:52px;
+    border-radius:50%; background:#0078ff; color:white;
+    font-size:26px; font-weight:bold; border:none;
+    box-shadow:0 3px 8px rgba(0,0,0,0.3);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:0.2s ease;
+  }
+  .floating-btn:hover { background:#005fcc; transform:scale(1.05); }
+
+  .toast {
+    position:fixed; bottom:90px; right:20px;
+    background:rgba(0,0,0,0.8); color:white;
+    padding:10px 14px; border-radius:6px; font-size:14px;
+    opacity:0; pointer-events:none; transition:opacity 0.3s ease; z-index:2000;
+  }
+  .toast.show { opacity:1; }
+
+  .leaflet-tooltip.station-tooltip {
+    font-weight:bold; font-size:14px; color:#222;
+    text-shadow:1px 1px 2px white;
+  }
+
+  @media (max-width:768px){
+    .filter-panel{font-size:15px;}
+    .floating-btn{width:48px;height:48px;font-size:22px;right:16px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- 상단 탭 -->
+<div class="tab-container">
+  <div class="tab active" onclick="showTab('mapPage')">📍 지도 보기</div>
+  <div class="tab" onclick="showTab('requestPage')">🧾 요청 현황</div>
+</div>
+
+<!-- 지도 페이지 -->
+<div id="mapPage" class="page active">
+  <div class="filter-panel">
+    <label><input type="checkbox" id="showSmall" checked onchange="filterMarkers()"> 소규모</label>
+    <label><input type="checkbox" id="showStream" checked onchange="filterMarkers()"> 하천</label>
+    <label><input type="checkbox" id="showStation" checked onchange="filterMarkers()"> 측정소</label>
+  </div>
+  <div id="map"></div>
+  <button class="floating-btn gps-btn" onclick="toggleTracking()">📍</button>
+  <div class="toast" id="toast">📡 위치 기능</div>
+</div>
+
+<!-- 요청 현황 페이지 -->
+<div id="requestPage" class="page">
+  <iframe
+    src="https://script.google.com/macros/s/AKfycbxL_pYXuoKz_XUPM-UmmpFNI99wW24aqbpwa4F23bIpqpMvBJjOcG-crgeuvKI7VA8hug/exec"
+    style="width:100%; height:100%; border:none;"
+  ></iframe>
+</div>
+
+<script>
+/* -------------------
+   탭 전환
+------------------- */
+function showTab(tabId){
+  document.querySelectorAll('.tab, .page').forEach(el=>el.classList.remove('active'));
+  document.querySelector(`.tab[onclick*="${tabId}"]`).classList.add('active');
+  const page = document.getElementById(tabId);
+  page.classList.add('active');
+
+  // 탭 전환 후 Leaflet 리사이즈 보정
+  if (tabId === 'mapPage' && window.map) {
+    // display:block이 된 다음 프레임에서 invalidateSize 실행
+    requestAnimationFrame(()=> map.invalidateSize());
+  }
 }
 
-/* 상단 탭 */
-.tab-container {
-  display: flex;
-  background: #2c3e50;
-  color: white;
-  height: 48px;
-  align-items: center;
-  justify-content: center;
-}
-.tab {
-  flex: 1;
-  text-align: center;
-  padding: 12px 0;
-  cursor: pointer;
-  transition: background 0.3s;
-  font-weight: 500;
-  border-bottom: 3px solid transparent;
-}
-.tab:hover { background: #34495e; }
-.tab.active {
-  background: #1abc9c;
-  border-bottom: 3px solid #16a085;
+/* -------------------
+   지도 기능
+------------------- */
+const GIST_URL = "https://gist.githubusercontent.com/phattonly1/9309e6ef4dd423e20628a28512edf12b/raw/facilities.json";
+
+let map, markerClusterGroup, facilities=[], markers=[];
+let myLocationMarker=null, watchId=null, tracking=false;
+
+// DOM이 준비된 뒤 초기화 (컨테이너 높이 계산 이슈 방지)
+document.addEventListener('DOMContentLoaded', initMap);
+
+function initMap(){
+  map = L.map("map", { zoomControl:false, preferCanvas:true }).setView([37.2275,128.91861], 15);
+  L.control.zoom({position:'topright'}).addTo(map);
+
+  markerClusterGroup = L.markerClusterGroup();
+
+  // 타일
+  const carto=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM & CARTO'}).addTo(map);
+  const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OSM'});
+  const hot=L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{attribution:'&copy; OSM HOT'});
+  L.control.layers({"Carto":carto,"OSM":osm,"HOT":hot}, null, {position:'topright'}).addTo(map);
+
+  // 툴팁 옵션
+  const isMobile=/Mobi|Android/i.test(navigator.userAgent);
+  window.tooltipOption = isMobile
+    ? {permanent:false}
+    : {permanent:true,className:'station-tooltip',direction:'top',offset:[0,-10]};
+
+  // 내 위치 아이콘
+  window.myIcon = L.icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  // 첫 렌더 직후 사이즈 보정
+  setTimeout(()=> map.invalidateSize(), 0);
+
+  // 리사이즈 대응
+  window.addEventListener('resize', ()=> map.invalidateSize());
+
+  loadFacilities();
 }
 
-/* 콘텐츠 영역 */
-.page { display: none; }
-.page.active { display: block; height: calc(100vh - 48px); }
+const typeConfig={
+  station:{color:'#ff6600',radius:8},
+  small:{color:'#33bbff',radius:10},
+  stream:{color:'#3399ff',radius:12},
+  default:{color:'#666',radius:8}
+};
 
-/* 지도 관련 스타일 */
-#map { width: 100%; height: 100%; }
-
-.filter-panel {
-  position:absolute; left:10px; top:10px; z-index:1000;
-  background:rgba(255,255,255,0.95);
-  padding:6px 8px; border-radius:8px;
-  box-shadow:0 2px 4px rgba(0,0,0,0.25);
-  display:inline-flex; flex-direction:column; gap:3px;
-  font-size:14px; width:fit-content;
+function createMarker(fac){
+  const cfg=typeConfig[fac.type]||typeConfig.default;
+  return L.circleMarker([fac.lat,fac.lng],{
+    radius:cfg.radius,color:'#000',weight:1,
+    fillColor:cfg.color,fillOpacity:0.85
+  }).bindTooltip(fac.name, tooltipOption);
 }
-label { display:flex; align-items:center; gap:4px; white-space:nowrap; }
 
-.floating-btn {
-  position:absolute; bottom:20px; right:20px;
-  z-index:1200; width:52px; height:52px;
-  border-radius:50%; background:#0078ff; color:white;
-  font-size:26px; font-weight:bold; border:none;
-  box-shadow:0 3px 8px rgba(0,0,0,0.
+function refreshMarkers(){
+  markerClusterGroup.clearLayers();
+  markers=facilities.map(f=>({layer:createMarker(f),type:f.type}));
+  filterMarkers();
+  map.addLayer(markerClusterGroup);
+}
+
+function filterMarkers(){
+  const showSmall=document.getElementById("showSmall").checked;
+  const showStream=document.getElementById("showStream").checked;
+  const showStation=document.getElementById("showStation").checked;
+  markerClusterGroup.clearLayers();
+  markers.forEach(m=>{
+    if((m.type==='small'&&showSmall)||(m.type==='stream'&&showStream)||(m.type==='station'&&showStation))
+      markerClusterGroup.addLayer(m.layer);
+  });
+}
+
+async function loadFacilities(){
+  try{
+    const res=await fetch(GIST_URL,{cache:"no-store"});
+    if(!res.ok) throw new Error("불러오기 실패");
+    facilities=await res.json();
+    refreshMarkers();
+  }catch(e){console.error(e);showToast("⚠️ 데이터 불러오기 실패");}
+}
+
+// 📍 GPS 추적
+function toggleTracking(){
+  const gpsBtn=document.querySelector(".gps-btn");
+  if(tracking){
+    navigator.geolocation.clearWatch(watchId);
+    tracking=false;
+    gpsBtn.textContent="⚪";
+    gpsBtn.style.background="#777";
+    showToast("🛑 실시간 추적 종료");
+  }else{
+    if(!navigator.geolocation){showToast("⚠️ GPS 미지원");return;}
+    watchId=navigator.geolocation.watchPosition(
+      pos=>{
+        const {latitude:lat,longitude:lng}=pos.coords;
+        if(myLocationMarker) map.removeLayer(myLocationMarker);
+        myLocationMarker = L.marker([lat,lng], { icon: myIcon })
+          .bindPopup("📍 내 위치").addTo(map);
+        map.flyTo([lat,lng],14);
+      },
+      err=>{
+        showToast("⚠️ 위치 접근 실패");
+        gpsBtn.textContent="⚪"; gpsBtn.style.background="#777";
+      },
+      {enableHighAccuracy:true,maximumAge:5000,timeout:10000}
+    );
+    tracking=true;
+    gpsBtn.textContent="🔵";
+    gpsBtn.style.background="#00b894";
+    showToast("📡 실시간 추적 시작");
+  }
+}
+
+function showToast(msg){
+  const toast=document.getElementById("toast");
+  toast.textContent=msg;
+  toast.classList.add("show");
+  setTimeout(()=>toast.classList.remove("show"),1500);
+}
+</script>
+</body>
+</html>
