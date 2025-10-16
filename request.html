@@ -6,7 +6,7 @@
 <title>요청 현황</title>
 <link rel="icon" href="./assets/gongdan-mark.png" />
 <style>
-  :root{ --HDR-H:64px; --ink:#0b2239; --muted:#6b7280; --ring:rgba(0,119,255,.25); }
+  :root{ --HDR-H:64px; --ink:#0b2239; --muted:#6b7280; --ring:rgba(0,119,255,.25); --card:#fff; --bd:#e5e7eb; }
   *{ box-sizing:border-box }
   html, body { height:100%; margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Pretendard,Arial; color:var(--ink); }
   body { background:#f5f7fb; }
@@ -16,31 +16,42 @@
   .title-text{ min-width:0; }
   .title-text h1{ margin:0; font-weight:800; letter-spacing:-0.02em; line-height:1.1; font-size: clamp(18px, 4.2vw, 26px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   /* 본문 */
-  .wrap{ max-width:1100px; margin:0 auto; padding:16px; }
+  .wrap{ max-width:1200px; margin:0 auto; padding:16px; }
   .toolbar{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:8px 0 14px; }
   .btn{ appearance:none; border:0; cursor:pointer; padding:10px 14px; border-radius:10px; font-weight:700; background:#2563eb; color:#fff; box-shadow:0 6px 14px rgba(37,99,235,.2); }
   .btn.ghost{ background:#fff; color:#2563eb; border:1px solid #93c5fd; }
+  .btn.danger{ background:#dc2626; }
   .muted{ color:var(--muted); font-size:13px; }
+  .chip{ display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#eef2ff; color:#3730a3; font-size:12px; }
+  .chip.pending{ background:#fff7ed; color:#9a3412; }
+  .chip.done{ background:#ecfdf5; color:#065f46; }
+  .filters{ display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 14px; }
+  .input, .select{ padding:10px 12px; border:1px solid var(--bd); border-radius:10px; background:#fff; }
+  .select{ min-width:140px; }
+  .date{ min-width:160px; }
   /* 카드 + 테이블 */
-  .card{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }
+  .card{ background:var(--card); border:1px solid var(--bd); border-radius:12px; overflow:auto; }
   table{ width:100%; border-collapse:collapse; }
-  th, td{ border-bottom:1px solid #e5e7eb; padding:10px; text-align:left; }
-  th{ background:#f8fafc; font-weight:700; }
+  th, td{ border-bottom:1px solid var(--bd); padding:10px; text-align:left; white-space:nowrap; }
+  th{ background:#f8fafc; font-weight:700; position:sticky; top:0; z-index:5; }
   tbody tr:hover{ background:#fafafa; }
   .right{ text-align:right; }
-  .error{ color:#b91c1c; font-size:13px; margin-top:10px; }
-  .badge{ display:inline-block; padding:3px 8px; border-radius:999px; font-size:12px; background:#eef2ff; color:#3730a3; }
-  .badge.pending{ background:#fff7ed; color:#9a3412; }
-  .badge.done{ background:#ecfdf5; color:#065f46; }
-
+  .status-badge{ display:inline-block; padding:3px 8px; border-radius:999px; font-size:12px; background:#eef2ff; color:#3730a3; }
+  .status-badge.pending{ background:#fff7ed; color:#9a3412; }
+  .status-badge.done{ background:#ecfdf5; color:#065f46; }
+  .small{ font-size:12px; color:#64748b; }
+  .pagination{ display:flex; gap:8px; align-items:center; justify-content:flex-end; padding:10px 0; }
+  .page-btn{ padding:8px 10px; border:1px solid var(--bd); background:#fff; border-radius:8px; cursor:pointer; }
+  .toast{ position:fixed; right:16px; bottom:16px; background:rgba(0,0,0,.85); color:#fff; padding:10px 12px; border-radius:10px; opacity:0; pointer-events:none; transition:.25s; z-index:3000; }
+  .toast.show{ opacity:1; }
   /* 모달 */
   .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); z-index:2000; }
   .modal.show{ display:flex; }
-  .modal .panel{ background:#fff; width:min(540px,92vw); border-radius:12px; padding:16px; box-shadow:0 20px 60px rgba(0,0,0,.25); }
-  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .modal .panel{ background:#fff; width:min(680px,92vw); border-radius:12px; padding:16px; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+  .grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
   .field{ display:flex; flex-direction:column; gap:6px; }
   .field label{ font-size:12px; color:#6b7280; }
-  .field input, .field select{ padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; }
+  .field input, .field select{ padding:10px 12px; border:1px solid var(--bd); border-radius:10px; }
   .actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:10px; }
 </style>
 </head>
@@ -53,29 +64,63 @@
 
   <!-- 본문 -->
   <main class="wrap">
+    <!-- 상단 버튼 -->
     <div class="toolbar">
       <button class="btn" id="btnOpenAdd">추가하기</button>
       <button class="btn ghost" id="btnReload">새로고침</button>
-      <span class="muted">ID는 자동 관리됩니다. 진행상태를 빠르게 수정할 수 있어요.</span>
+      <button class="btn ghost" id="btnCSV">CSV 내보내기</button>
+      <span class="muted small" id="summary">총 0건</span>
     </div>
 
+    <!-- 요약 칩 -->
+    <div class="toolbar" id="chips">
+      <span class="chip">전체 <b id="c_all">0</b></span>
+      <span class="chip pending">요청 <b id="c_req">0</b></span>
+      <span class="chip">진행중 <b id="c_prog">0</b></span>
+      <span class="chip done">완료 <b id="c_done">0</b></span>
+    </div>
+
+    <!-- 필터 -->
+    <div class="filters">
+      <input id="q" class="input" type="search" placeholder="검색(요청자/물품)" />
+      <select id="f_status" class="select">
+        <option value="">진행상태(전체)</option>
+        <option>요청</option><option>진행중</option><option>완료</option>
+      </select>
+      <input id="f_from" class="input date" type="date" />
+      <input id="f_to" class="input date" type="date" />
+      <select id="f_pagesize" class="select">
+        <option value="10">10행</option><option value="20">20행</option><option value="50">50행</option><option value="100">100행</option>
+      </select>
+      <span class="muted small">열 머리 클릭 → 정렬</span>
+    </div>
+
+    <!-- 테이블 -->
     <div class="card">
-      <table>
+      <table id="tbl">
         <thead>
           <tr>
-            <th style="width:80px">ID</th>
-            <th>요청일</th>
-            <th>요청자</th>
-            <th>요청물품</th>
-            <th class="right" style="width:90px">개수</th>
-            <th style="width:120px">진행상태</th>
+            <th data-k="ID" style="width:80px">ID</th>
+            <th data-k="요청일">요청일</th>
+            <th data-k="요청자">요청자</th>
+            <th data-k="요청물품">요청물품</th>
+            <th data-k="개수" class="right" style="width:90px">개수</th>
+            <th data-k="진행사항" style="width:140px">진행상태</th>
+            <th style="width:140px">빠른변경</th>
             <th style="width:90px">수정</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="7">불러오는 중...</td></tr>
+          <tr><td colspan="8">불러오는 중...</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- 페이지네이션 -->
+    <div class="pagination">
+      <button class="page-btn" id="prev">이전</button>
+      <span class="small" id="pageinfo">0 / 0</span>
+      <button class="page-btn" id="next">다음</button>
     </div>
 
     <div id="msg" class="error"></div>
@@ -86,7 +131,6 @@
     <div class="panel">
       <h3 id="modalTitle" style="margin:0 0 10px">요청 추가</h3>
       <form id="postForm" method="POST" target="hidden_iframe">
-        <!-- Apps Script /exec 주소는 JS에서 설정 -->
         <input type="hidden" name="op" value="add" />
         <input type="hidden" name="id" value="" />
         <div class="grid">
@@ -126,139 +170,226 @@
   <!-- 숨은 iframe: 폼 POST 응답 수신 -->
   <iframe name="hidden_iframe" style="display:none"></iframe>
 
+  <!-- 토스트 -->
+  <div class="toast" id="toast">처리되었습니다.</div>
+
   <script>
-    // === 설정 ===
-    const SHEET_ID = "13-0Qp2ImIIURJqv-YbklEVbsNYLPz_akDRwO2lDeEvM";
-    const GID = "0";
-    const APPS_SCRIPT_EXEC = "https://script.google.com/macros/s/AKfycbzsMVRPSrtbERnCK5nj9NiYNqVXxLsZBSQE5YmCJlxGlx4jeuDdrP7IpEcikGpyDlk6/exec";
+    /* === 설정: 꼭 맞게 바꾸세요 === */
+    const SHEET_ID = "13-0Qp2ImIIURJqv-YbklEVbsNYLPz_akDRwO2lDeEvM"; // 제공한 시트
+    const GID = "0";                            // 탭 gid (기본 0)
+    const APPS_SCRIPT_EXEC = "https://script.google.com/macros/s/AKfycbzsMVRPSrtbERnCK5nj9NiYNqVXxLsZBSQE5YmCJlxGlx4jeuDdrP7IpEcikGpyDlk6/exec"; // 제공한 배포ID
 
-    // 모달 열기/닫기
-    const modal = document.getElementById('modal');
-    function openModal(mode, row) {
-      modal.classList.add('show');
-      const f = document.getElementById('postForm');
-      f.action = APPS_SCRIPT_EXEC;
+    /* === 상태 === */
+    let raw = [];         // GViz 원본
+    let view = [];        // 필터/정렬 적용본
+    let page = 1, pageSize = 10;
+    let sortKey = "ID", sortDir = "desc"; // 기본 최신 ID 내림차순
+    const $ = s => document.querySelector(s);
 
-      if (mode === 'add') {
-        document.getElementById('modalTitle').textContent = "요청 추가";
-        f.op.value = 'add';
-        f.id.value = '';
-        f.date.value = '';
-        f.who.value = '';
-        f.item.value = '';
-        f.qty.value = '';
-        f.status.value = '요청';
-      } else {
-        document.getElementById('modalTitle').textContent = "요청 수정";
-        f.op.value = 'update';
-        f.id.value = row.ID;
-        f.date.value = normalizeDate(row['요청일']);
-        f.who.value = row['요청자'] || '';
-        f.item.value = row['요청물품'] || '';
-        f.qty.value = row['개수'] || '';
-        f.status.value = (row['진행사항'] || '요청');
-      }
+    /* === 유틸 === */
+    const toast = (t)=>{ const el=$('#toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 1400); };
+    const normDate = (v)=>{ if(!v) return ''; if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v; return String(v).replace(/[.\s]/g,'-').replace(/-$/,'').replace(/--/g,'-'); };
+    const toNum = v => (v===''||v==null||isNaN(Number(v))) ? 0 : Number(v);
+
+    /* === 데이터 로드(GViz JSONP) === */
+    function load(){
+      const old = document.getElementById('gviz'); if (old) old.remove();
+      const s = document.createElement('script'); s.id='gviz';
+      s.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json;responseHandler:renderGViz&_=${Date.now()}`;
+      document.body.appendChild(s);
     }
-    function closeModal(){ modal.classList.remove('show'); }
-
-    document.getElementById('btnOpenAdd').onclick = () => openModal('add');
-    document.getElementById('btnCancel').onclick  = closeModal;
-
-    // 폼 제출 후(숨은 iframe load) → 모달 닫고 목록 새로고침
-    document.querySelector('iframe[name="hidden_iframe"]').addEventListener('load', () => {
-      closeModal(); load();
-    });
-
-    // 날짜 문자열 보정
-    function normalizeDate(v){
-      if (!v) return '';
-      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
-      return String(v).replace(/[.\s]/g,'-').replace(/-$/,'').replace(/--/g,'-');
-    }
-
-    // 상태 뱃지
-    function badge(t){
-      const v = (t||'').trim();
-      if (v==='완료') return '<span class="badge done">완료</span>';
-      if (v==='요청') return '<span class="badge pending">요청</span>';
-      if (v) return `<span class="badge">${v}</span>`;
-      return '';
-    }
-
-    // GViz 응답 → 렌더
-    function renderGViz(resp){
+    window.renderGViz = function(resp){
       try{
         const table = resp.table;
         const cols = table.cols.map(c=>c.label);
         const rows = table.rows.map(r => r.c.map(c => c ? c.v : ""));
-
         const idx = {
-          id:    cols.indexOf("ID"),
-          date:  cols.indexOf("요청일"),
-          who:   cols.indexOf("요청자"),
-          item:  cols.indexOf("요청물품"),
-          qty:   cols.indexOf("개수"),
-          stat:  cols.indexOf("진행사항")
+          id:   cols.indexOf("ID"),
+          date: cols.indexOf("요청일"),
+          who:  cols.indexOf("요청자"),
+          item: cols.indexOf("요청물품"),
+          qty:  cols.indexOf("개수"),
+          stat: cols.indexOf("진행사항")
         };
+        raw = rows.map(r => ({
+          ID: r[idx.id], 요청일: r[idx.date], 요청자: r[idx.who], 요청물품: r[idx.item], 개수: r[idx.qty], 진행사항: r[idx.stat]
+        })).filter(r => r.ID!=="" && r.ID!=null);
+        applyAndRender();
+      }catch(e){ $('#msg').textContent = '불러오기 실패: ' + e.message; }
+    };
 
-        const data = rows.map(r => ({
-          ID: r[idx.id],
-          '요청일': r[idx.date],
-          '요청자': r[idx.who],
-          '요청물품': r[idx.item],
-          '개수': r[idx.qty],
-          '진행사항': r[idx.stat]
-        }));
+    /* === 필터/정렬/페이지 적용 === */
+    function applyAndRender(){
+      // 필터
+      const q = $('#q').value.trim().toLowerCase();
+      const fs = $('#f_status').value.trim();
+      const ffrom = $('#f_from').value ? new Date($('#f_from').value) : null;
+      const fto   = $('#f_to').value ? new Date($('#f_to').value) : null;
 
-        const tbody = document.getElementById('tbody');
-        if (!data.length){
-          tbody.innerHTML = '<tr><td colspan="7">데이터가 없습니다.</td></tr>'; return;
+      view = raw.filter(r=>{
+        const textOk = !q || (String(r['요청자']).toLowerCase().includes(q) || String(r['요청물품']).toLowerCase().includes(q));
+        const statOk = !fs || String(r['진행사항']).trim()===fs;
+        let dateOk = true;
+        if (ffrom || fto) {
+          const d = new Date(normDate(r['요청일']));
+          if (ffrom && d < ffrom) dateOk = false;
+          if (fto) { const end = new Date(fto); end.setHours(23,59,59,999); if (d > end) dateOk = false; }
         }
-        const frag = document.createDocumentFragment();
-        data.forEach(row => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${row.ID||''}</td>
-            <td>${row['요청일']||''}</td>
-            <td>${row['요청자']||''}</td>
-            <td>${row['요청물품']||''}</td>
-            <td class="right">${row['개수']||''}</td>
-            <td>${badge(row['진행사항'])}</td>
-            <td><button class="btn" style="padding:6px 10px" data-id="${row.ID}">수정</button></td>
-          `;
-          frag.appendChild(tr);
-        });
-        tbody.innerHTML = '';
-        tbody.appendChild(frag);
+        return textOk && statOk && dateOk;
+      });
 
-        // 각 행의 수정 버튼
-        tbody.querySelectorAll('button[data-id]').forEach(btn=>{
-          btn.onclick = () => {
-            const id = btn.getAttribute('data-id');
-            const row = data.find(d => String(d.ID)===String(id));
-            if (row) openModal('update', row);
-          };
-        });
-      }catch(e){
-        document.getElementById('msg').textContent = '표시 실패: ' + e.message;
+      // 요약
+      const all = view.length;
+      const req = view.filter(r=>String(r['진행사항']).trim()==='요청').length;
+      const prog= view.filter(r=>String(r['진행사항']).trim()==='진행중').length;
+      const done= view.filter(r=>String(r['진행사항']).trim()==='완료').length;
+      $('#c_all').textContent=all; $('#c_req').textContent=req; $('#c_prog').textContent=prog; $('#c_done').textContent=done;
+      $('#summary').textContent = `총 ${all}건`;
+
+      // 정렬
+      view.sort((a,b)=>{
+        const A = a[sortKey], B = b[sortKey];
+        let cmp = 0;
+        if (sortKey==='개수' || sortKey==='ID') { cmp = toNum(A) - toNum(B); }
+        else if (sortKey==='요청일') { cmp = new Date(normDate(A)) - new Date(normDate(B)); }
+        else { cmp = String(A||'').localeCompare(String(B||''), 'ko'); }
+        return sortDir==='asc' ? cmp : -cmp;
+      });
+
+      // 페이지
+      pageSize = Number($('#f_pagesize').value)||10;
+      const totalPages = Math.max(1, Math.ceil(view.length / pageSize));
+      if (page > totalPages) page = totalPages;
+      const start = (page-1)*pageSize, end = start + pageSize;
+      const slice = view.slice(start, end);
+      $('#pageinfo').textContent = `${page} / ${totalPages}`;
+
+      // 렌더
+      const tbody = $('#tbody');
+      if (!slice.length){ tbody.innerHTML = '<tr><td colspan="8">데이터가 없습니다.</td></tr>'; return; }
+      const frag = document.createDocumentFragment();
+      slice.forEach(row=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.ID??''}</td>
+          <td>${row['요청일']??''}</td>
+          <td>${row['요청자']??''}</td>
+          <td>${row['요청물품']??''}</td>
+          <td class="right">${row['개수']??''}</td>
+          <td>${statusBadge(row['진행사항'])}</td>
+          <td>
+            <select data-quick="${row.ID}" class="select" style="min-width:120px;padding:6px 8px;">
+              <option ${sel(row['진행사항'],'요청')}>요청</option>
+              <option ${sel(row['진행사항'],'진행중')}>진행중</option>
+              <option ${sel(row['진행사항'],'완료')}>완료</option>
+            </select>
+            <button class="btn ghost" style="padding:6px 10px;margin-left:6px" data-save="${row.ID}">변경</button>
+          </td>
+          <td><button class="btn" style="padding:6px 10px" data-edit="${row.ID}">수정</button></td>
+        `;
+        frag.appendChild(tr);
+      });
+      tbody.innerHTML = '';
+      tbody.appendChild(frag);
+
+      // 빠른변경/수정 핸들러
+      tbody.querySelectorAll('button[data-save]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const id = btn.getAttribute('data-save');
+          const selEl = tbody.querySelector(`select[data-quick="${id}"]`);
+          quickUpdate(id, selEl.value);
+        };
+      });
+      tbody.querySelectorAll('button[data-edit]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const id = btn.getAttribute('data-edit');
+          const full = raw.find(r=>String(r.ID)===String(id));
+          if (full) openModal('update', full);
+        };
+      });
+    }
+
+    function statusBadge(v){
+      const t = (v||'').trim();
+      if (t==='완료') return '<span class="status-badge done">완료</span>';
+      if (t==='요청') return '<span class="status-badge pending">요청</span>';
+      if (t) return `<span class="status-badge">${t}</span>`;
+      return '';
+    }
+    const sel = (cur, val)=> (String(cur).trim()===val ? 'selected' : '');
+
+    /* === 이벤트 === */
+    $('#btnReload').onclick = load;
+    $('#btnOpenAdd').onclick = ()=> openModal('add');
+    $('#btnCancel').onclick = closeModal;
+    $('#prev').onclick = ()=>{ if(page>1){ page--; applyAndRender(); } };
+    $('#next').onclick = ()=>{ page++; applyAndRender(); };
+    $('#f_pagesize').onchange = ()=>{ page=1; applyAndRender(); };
+
+    // 필터(디바운스)
+    let tmr;
+    ['q','f_status','f_from','f_to'].forEach(id=>{
+      $('#'+id).addEventListener('input', ()=>{ clearTimeout(tmr); tmr=setTimeout(()=>{ page=1; applyAndRender(); }, 220); });
+      $('#'+id).addEventListener('change', ()=>{ page=1; applyAndRender(); });
+    });
+
+    // 정렬: 머리 클릭
+    document.querySelectorAll('th[data-k]').forEach(th=>{
+      th.style.cursor='pointer';
+      th.onclick = ()=>{
+        const k = th.getAttribute('data-k');
+        if (sortKey===k) sortDir = (sortDir==='asc'?'desc':'asc'); else { sortKey=k; sortDir='asc'; }
+        applyAndRender();
+      };
+    });
+
+    // CSV 다운로드
+    $('#btnCSV').onclick = ()=>{
+      const header = ['ID','요청일','요청자','요청물품','개수','진행상태'];
+      const rows = view.map(r => [r.ID, r['요청일'], r['요청자'], r['요청물품'], r['개수'], r['진행사항']]);
+      const csv = [header].concat(rows).map(a=>a.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `requests_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    /* === 모달/폼 === */
+    const modalEl = $('#modal'); const form = $('#postForm');
+
+    function openModal(mode, row) {
+      modalEl.classList.add('show');
+      form.action = APPS_SCRIPT_EXEC;
+      if (mode==='add'){
+        $('#modalTitle').textContent = '요청 추가';
+        form.op.value='add'; form.id.value='';
+        form.date.value=''; form.who.value=''; form.item.value=''; form.qty.value=''; form.status.value='요청';
+      } else {
+        $('#modalTitle').textContent = '요청 수정';
+        form.op.value='update'; form.id.value=row.ID;
+        form.date.value = normDate(row['요청일']); form.who.value=row['요청자']||''; form.item.value=row['요청물품']||''; form.qty.value=row['개수']||''; form.status.value=(row['진행사항']||'요청');
       }
     }
+    function closeModal(){ modalEl.classList.remove('show'); }
 
-    // GViz 로더 (JSONP, 캐시 우회용 타임스탬프 포함)
-    function load(){
-      const old = document.getElementById('gviz');
-      if (old) old.remove();
-      const s = document.createElement('script');
-      s.id = 'gviz';
-      s.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json;responseHandler:renderGViz&_=${Date.now()}`;
-      document.body.appendChild(s);
+    // 폼 제출 후 응답(숨은 iframe load) → 닫고 새로고침
+    document.querySelector('iframe[name="hidden_iframe"]').addEventListener('load', ()=>{
+      closeModal(); toast('저장되었습니다'); load();
+    });
+
+    // 빠른 상태 변경
+    function quickUpdate(id, status){
+      const iframe = document.querySelector('iframe[name="hidden_iframe"]');
+      // 임시 폼 만들어 POST
+      const f = document.createElement('form'); f.method='POST'; f.action=APPS_SCRIPT_EXEC; f.target='hidden_iframe';
+      [['op','update'],['id',id],['status',status]].forEach(([k,v])=>{
+        const i=document.createElement('input'); i.type='hidden'; i.name=k; i.value=v; f.appendChild(i);
+      });
+      document.body.appendChild(f); f.submit(); f.remove();
+      toast('상태 변경 중…');
     }
 
-    // 전역 핸들러
-    window.renderGViz = renderGViz;
-    document.getElementById('btnReload').onclick = load;
-
-    // 초기 로드
+    /* === 초기화 === */
     load();
   </script>
 </body>
