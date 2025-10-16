@@ -2,72 +2,202 @@
 + <html lang="ko">
 + <head>
 +   <meta charset="utf-8" />
-+   <meta name="viewport" content="width=device-width,initial-scale=1" />
-+   <title>프로젝트 문서 · 한강 WMS</title>
-+   <link rel="icon" href="./assets/mark.svg">
++   <meta name="viewport" content="width=device-width, initial-scale=1" />
++   <title>문서 · 한강 WMS</title>
++   <link rel="icon" href="./assets/gongdan-mark.png" />
++   <meta name="color-scheme" content="light dark" />
 +   <style>
-+     :root{--bd:#e5e7eb;--bg:#fff;--bg2:#fafafa;--fg:#111}
-+     @media (prefers-color-scheme: dark){
-+       :root{--bd:#2a2a2a;--bg:#111;--bg2:#151515;--fg:#eee}
++     :root{
++       --page-w: 920px;
++       --fg:#0f172a; --muted:#475569; --bd:#e5e7eb; --bg:#ffffff;
++       --card:#fafafa; --hl:#f5f7ff; --ring: rgba(0,119,255,.28);
++       --code:#0b1220; --kbd:#111827;
 +     }
-+     body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif}
-+     header{display:flex;align-items:center;gap:.75rem; padding:.75rem 1rem; border-bottom:1px solid var(--bd)}
-+     header .mark{width:36px;height:36px}
-+     header .title{margin:0;font-size:1.1rem;font-weight:700}
-+     header .actions{margin-left:auto;display:flex;gap:.5rem}
-+     header .btn{padding:.4rem .65rem;border:1px solid var(--bd);border-radius:8px;text-decoration:none;color:inherit;background:transparent}
-+     main{padding:1rem}
-+     .section{margin:0 0 1.25rem}
-+     .section h2{margin:.25rem 0 .5rem;font-size:1rem}
-+     .notion-embed{width:100%;height:min(70vh,900px);border:1px solid var(--bd);border-radius:10px;background:var(--bg2)}
-+     .grid{display:grid;grid-template-columns:1fr;gap:1rem}
-+     @media(min-width:960px){.grid{grid-template-columns:2fr 1fr}}
-+     .card{border:1px solid var(--bd);border-radius:10px;background:var(--bg2);padding:.75rem}
-+     .muted{opacity:.8;font-size:.9rem}
-+     .list{margin:.25rem 0 0;padding-left:1.1rem}
-+     .kbd{font:600 .85rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; padding:.1rem .35rem;border:1px solid var(--bd);border-radius:6px}
++     @media (prefers-color-scheme: dark){
++       :root{
++         --fg:#e5e7eb; --muted:#9aa4b2; --bd:#2a2f38; --bg:#0c0d0f;
++         --card:#121317; --hl:#11162a; --code:#e6edf3; --kbd:#e5e7eb;
++       }
++     }
++     *{box-sizing:border-box}
++     body{
++       margin:0; background:var(--bg); color:var(--fg);
++       font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Apple SD Gothic Neo, Noto Sans KR, Pretendard, Arial;
++       -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
++     }
++     a{color:inherit}
++     /* 상단 바(브레드크럼) */
++     header{
++       position:sticky; top:0; z-index:10;
++       backdrop-filter: saturate(160%) blur(6px);
++       background:linear-gradient(to bottom, rgba(255,255,255,.82), rgba(255,255,255,.66));
++       border-bottom:1px solid var(--bd);
++     }
++     @media (prefers-color-scheme: dark){
++       header{ background:linear-gradient(to bottom, rgba(0,0,0,.5), rgba(0,0,0,.34)); }
++     }
++     .nav{ max-width:var(--page-w); margin:0 auto; padding:.6rem 1rem; display:flex; align-items:center; gap:.5rem }
++     .crumbs{ display:flex; flex-wrap:wrap; gap:.5rem; font-size:.9rem; color:var(--muted) }
++     .crumbs a{ text-decoration:none; border:1px solid var(--bd); padding:.2rem .5rem; border-radius:8px }
++     /* 본문 */
++     main{ max-width:var(--page-w); margin:0 auto; padding:1.2rem 1rem 3rem }
++     .page-title{ font-weight:800; letter-spacing:-.01em; margin:1.1rem 0 .3rem; font-size:clamp(22px,3.2vw,32px) }
++     .updated{ color:var(--muted); font-size:.95rem }
++     .hr{ height:1px; background:var(--bd); margin:1rem 0 }
++     /* 레이아웃: 본문 + TOC */
++     .grid{ display:grid; grid-template-columns:1fr; gap:1rem }
++     @media (min-width: 1024px){ .grid{ grid-template-columns: minmax(0,1fr) 260px } }
++     /* 목차 */
++     .toc{ position:sticky; top:68px; border:1px solid var(--bd); border-radius:12px; padding:.8rem; background:transparent }
++     .toc h3{ margin:.2rem 0 .5rem; font-size:.95rem; color:var(--muted) }
++     .toc a{ display:block; padding:.28rem .2rem; text-decoration:none; font-size:.95rem; border-radius:6px }
++     .toc a.active{ background:var(--hl) }
++     /* 노션풍 타이포/블록 */
++     h1,h2,h3{ scroll-margin-top:84px }
++     h2{ font-size:1.35rem; margin:1.1rem 0 .5rem }
++     h3{ font-size:1.05rem; margin:.9rem 0 .35rem }
++     p{ line-height:1.8; margin:.45rem 0 }
++     ul{ margin:.2rem 0 .6rem 1.2rem } li{ margin:.2rem 0 }
++     .callout{ display:flex; gap:.6rem; padding:.8rem .9rem; background:var(--card); border:1px solid var(--bd); border-radius:12px }
++     .callout .i{ font-size:1.15rem }
++     details.toggle{ border:1px solid var(--bd); border-radius:10px; padding:.65rem .8rem; background:transparent }
++     details.toggle summary{ cursor:pointer; font-weight:600 }
++     .todo{ list-style:none; padding:0; margin:.3rem 0 }
++     .todo li{ display:flex; align-items:flex-start; gap:.6rem }
++     .todo input{ margin-top:.2rem }
++     code{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:var(--hl); padding:.06rem .34rem; border-radius:6px }
++     pre{ background:var(--hl); color:var(--code); border:1px solid var(--bd); border-radius:10px; padding:.9rem; overflow:auto }
++     table{ width:100%; border-collapse:collapse; font-size:.95rem; margin:.5rem 0 }
++     th,td{ border:1px solid var(--bd); padding:.55rem .6rem; vertical-align:top }
++     th{ background:rgba(127,127,127,.06); text-align:left }
++     .pill{ display:inline-block; padding:.28rem .6rem; border:1px solid var(--bd); border-radius:999px; text-decoration:none }
++     .links{ display:flex; flex-wrap:wrap; gap:.5rem }
++     .kbd{ font:600 .82rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:var(--kbd); border:1px solid var(--bd); border-radius:6px; padding:.08rem .35rem }
 +   </style>
 + </head>
 + <body>
 +   <header>
-+     <img class="mark" src="./assets/mark.svg" alt="mark">
-+     <h1 class="title">프로젝트 문서</h1>
-+     <nav class="actions">
-+       <a class="btn" href="./index.html">홈</a>
-+       <a class="btn" href="./map.html">지도</a>
-+       <a class="btn" href="./request.html">요청 관리</a>
-+     </nav>
++     <div class="nav">
++       <div class="crumbs">
++         <a href="./index.html">홈</a>
++         <span>›</span>
++         <a href="./docs.html" aria-current="page">문서</a>
++       </div>
++     </div>
 +   </header>
 +   <main>
++     <h1 class="page-title">문서(노션 느낌 UI)</h1>
++     <div class="updated">마지막 업데이트: <time id="updated">2025-10-17</time></div>
++     <div class="hr"></div>
 +     <div class="grid">
-+       <section class="section">
-+         <h2>노션 가이드</h2>
-+         <!-- 퍼블릭 공유 URL로 교체 -->
-+         <iframe class="notion-embed" src="https://www.notion.so/your-public-page-slug" loading="lazy" referrerpolicy="no-referrer"></iframe>
-+         <p class="muted" style="margin-top:.5rem">
-+           노션 원본에서 수정하면 이 임베드에 바로 반영됩니다. 캐시가 남아 있으면 URL 끝에 <span class="kbd">?v=타임스탬프</span>를 붙여 새로고침하세요.
-+         </p>
-+       </section>
-+       <aside class="section card">
-+         <h2>빠른 링크</h2>
-+         <ul class="list">
-+           <li><a href="./map.html">지도(분당 시작, Gist 마커)</a></li>
-+           <li><a href="./request.html">요청 현황 관리</a></li>
-+           <li><a href="https://script.google.com/macros/s/AKfycbyxNNfPgvSeL0o9lSwFRlS7YRrKSt3Qv4baQUOy2oV1M5WkvBu-ciyTKQZuf9p6rPmsDg/exec" target="_blank" rel="noopener">Apps Script 웹앱</a></li>
-+         </ul>
-+         <h2 style="margin-top:1rem">테스트 메모</h2>
-+         <ul class="list">
-+           <li>캐시 우회: <span class="kbd">/docs.html?v=20251016a</span></li>
-+           <li>시크릿 창에서 노션 임베드가 로그인 없이 보이는지 확인</li>
-+         </ul>
++       <article>
++         <section id="overview">
++           <h2>개요</h2>
++           <p>
++             이 페이지는 노션과 <strong>아무 연동 없이</strong> 노션을 연상시키는 정적 UI로 작성되었습니다.
++             문단/헤딩/콜아웃/토글/체크리스트/테이블/코드블록/목차(TOC)/브레드크럼을 제공합니다.
++           </p>
++           <div class="callout" role="note">
++             <div class="i">💡</div>
++             <div>내용은 HTML만 수정하면 되고, 외부 폰트·JS 라이브러리는 사용하지 않습니다.</div>
++           </div>
++         </section>
++
++         <section id="guide">
++           <h2>작성 지침</h2>
++           <details class="toggle" open>
++             <summary>섹션 추가 방법</summary>
++             <p>아래 템플릿을 복제해 <code>id</code>만 바꾸고, 우측 목차(<code>#tocNav</code>)에 앵커를 추가하세요.</p>
++             <pre><code>&lt;section id="new-section"&gt;
++  &lt;h2&gt;새 섹션&lt;/h2&gt;
++  &lt;p&gt;내용...&lt;/p&gt;
++&lt;/section&gt;</code></pre>
++           </details>
++           <details class="toggle">
++             <summary>캐시 우회</summary>
++             <p>정적 배포 후 캐시가 남아 있으면 쿼리 파라미터를 붙여 새로고침합니다.</p>
++             <pre><code>/docs.html?v=20251017
++/index.html?v=20251017a</code></pre>
++           </details>
++         </section>
++
++         <section id="checklist">
++           <h2>체크리스트(예시)</h2>
++           <ul class="todo">
++             <li><input type="checkbox" id="c1" checked><label for="c1">문서 페이지는 임베드 없이 정적 구성</label></li>
++             <li><input type="checkbox" id="c2" checked><label for="c2">다크모드 대비 확인</label></li>
++             <li><input type="checkbox" id="c3"><label for="c3">섹션 추가(필요 시)</label></li>
++           </ul>
++         </section>
++
++         <section id="table">
++           <h2>테이블(예시)</h2>
++           <table>
++             <thead><tr><th>항목</th><th>설명</th><th>비고</th></tr></thead>
++             <tbody>
++               <tr><td>문서 포맷</td><td>정적 HTML + 내부 CSS</td><td>외부 의존성 없음</td></tr>
++               <tr><td>스타일</td><td>노션 유사(여백, 섹션, 블록)</td><td>프로젝트 톤앤매너에 맞춤</td></tr>
++               <tr><td>TOC</td><td>우측 고정, 현재 섹션 하이라이트</td><td>스크롤 위치 기반</td></tr>
++             </tbody>
++           </table>
++         </section>
++
++         <section id="code">
++           <h2>코드 블록(예시)</h2>
++           <pre><code>// 스크립트 없이 가능한 범위에서 작성
++// 필요 시 아래의 간단 스크롤 스파이만 사용
++console.log('Docs loaded');</code></pre>
++         </section>
++
++         <section id="links">
++           <h2>빠른 링크</h2>
++           <div class="links">
++             <a class="pill" href="./index.html">대시보드</a>
++             <a class="pill" href="./map.html">지도</a>
++             <a class="pill" href="./request.html">요청 관리</a>
++           </div>
++         </section>
++       </article>
++
++       <aside class="toc" aria-label="목차">
++         <h3>목차</h3>
++         <nav id="tocNav">
++           <a href="#overview">개요</a>
++           <a href="#guide">작성 지침</a>
++           <a href="#checklist">체크리스트</a>
++           <a href="#table">테이블</a>
++           <a href="#code">코드 블록</a>
++           <a href="#links">빠른 링크</a>
++         </nav>
 +       </aside>
 +     </div>
-+     <section class="section card" style="margin-top:1rem">
-+       <h2>변경 이력(수동 기록)</h2>
-+       <ul class="list">
-+         <li>2025-10-16: <code>docs.html</code> 최초 추가, 노션 임베드/빠른 링크/테스트 메모 수록</li>
-+       </ul>
-+     </section>
 +   </main>
++   <script>
++     // 업데이트 날짜 자동(원하면 고정 텍스트로 두어도 됨)
++     (function(){
++       const t=document.getElementById('updated');
++       if(t && /^\d{4}-\d{2}-\d{2}$/.test(t.textContent.trim())) {
++         // 이미 날짜라면 그대로 두고, 아니면 오늘 날짜로 대체
++       } else if(t){
++         const d=new Date(), y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
++         t.textContent = y+'-'+m+'-'+dd;
++       }
++     })();
++     // 간단한 스크롤 스파이(현재 섹션 TOC 하이라이트)
++     (function(){
++       const tocLinks=[...document.querySelectorAll('#tocNav a')];
++       const secs=tocLinks.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
++       const onScroll=()=>{
++         let idx=0;
++         for(let i=0;i<secs.length;i++){
++           const r=secs[i].getBoundingClientRect();
++           if(r.top<120) idx=i;
++         }
++         tocLinks.forEach((a,i)=>a.classList.toggle('active', i===idx));
++       };
++       document.addEventListener('scroll', onScroll, {passive:true});
++       onScroll();
++     })();
++   </script>
 + </body>
 + </html>
