@@ -17,12 +17,12 @@
   :root{ --HDR-H: 64px; }
   *{ box-sizing:border-box }
   html, body { height:100%; margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Pretendard,Arial; }
-  body { background: #f5f7fb; color:#0b2239; }
+  body { background:#f5f7fb; color:#0b2239; }
 
-  /* 공통 헤더 (로고 + 제목 한 줄) */
+  /* 상단 헤더: 로고 + 제목 한 줄 */
   .appbar{
     height:var(--HDR-H); display:flex; align-items:center; gap:14px;
-    padding:0 16px; background:#ffffff; border-bottom:1px solid rgba(0,0,0,.06);
+    padding:0 16px; background:#fff; border-bottom:1px solid rgba(0,0,0,.06);
     position:sticky; top:0; z-index:1000;
   }
   .logo-img{ width:44px; height:44px; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(0,0,0,.12)); }
@@ -33,17 +33,20 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  /* 본문 레이아웃 */
-  .map-wrap{ position:relative; height:calc(100dvh - var(--HDR-H)); min-height:400px; }
+  /* 본문 레이아웃 (모바일 안전 높이 svh 사용) */
+  .map-wrap{
+    position:relative;
+    height:calc(100svh - var(--HDR-H)); /* ← 핵심: svh */
+    min-height:400px;
+  }
   #map{ width:100%; height:100%; }
 
-  /* UI 요소들 */
+  /* UI 패널/버튼 */
   .filter-panel{
     position:absolute; left:10px; top:10px; z-index:1000;
     background:rgba(255,255,255,0.95); padding:6px 8px; border-radius:8px;
     box-shadow:0 2px 4px rgba(0,0,0,0.25);
-    display:inline-flex; flex-direction:column; gap:3px;
-    font-size:14px; width:fit-content;
+    display:inline-flex; flex-direction:column; gap:3px; font-size:14px;
   }
   label{ display:flex; align-items:center; gap:4px; white-space:nowrap; }
 
@@ -70,4 +73,152 @@
 
   @media (max-width:420px){
     .logo-img{ width:40px; height:40px; }
-    .title-text h1{ font-s
+    .title-text h1{ font-size: clamp(16px, 5vw, 22px); }
+  }
+</style>
+</head>
+<body>
+  <!-- 헤더 -->
+  <header class="appbar">
+    <img class="logo-img" src="./assets/gongdan-mark.png" alt="공단 마크" />
+    <div class="title-text"><h1>수질측정망 지도</h1></div>
+  </header>
+
+  <!-- 지도 -->
+  <main class="map-wrap">
+    <div class="filter-panel">
+      <label><input type="checkbox" id="showSmall" checked onchange="filterMarkers()"> 소규모</label>
+      <label><input type="checkbox" id="showStream" checked onchange="filterMarkers()"> 하천</label>
+      <label><input type="checkbox" id="showStation" checked onchange="filterMarkers()"> 측정소</label>
+    </div>
+
+    <div id="map"></div>
+
+    <button class="floating-btn gps-btn" onclick="toggleTracking()">📍</button>
+    <div class="toast" id="toast">📡 위치 기능</div>
+  </main>
+
+<script>
+/* 초기 중심: 성남시 분당구 장미로 42 */
+const INITIAL_CENTER = [37.4106329, 127.1255116];
+const INITIAL_ZOOM   = 16;
+
+const GIST_URL = "https://gist.githubusercontent.com/phattonly1/9309e6ef4dd423e20628a28512edf12b/raw/facilities.json";
+
+const map = L.map("map", { zoomControl:false, preferCanvas:true }).setView(INITIAL_CENTER, INITIAL_ZOOM);
+L.control.zoom({position:'topright'}).addTo(map);
+
+const markerClusterGroup = L.markerClusterGroup();
+let facilities=[], markers=[];
+let myLocationMarker=null, watchId=null, tracking=false;
+
+// 타일
+const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM & CARTO'}).addTo(map);
+const osm   = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OSM'});
+const hot   = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{attribution:'&copy; OSM HOT'});
+L.control.layers({"Carto":carto,"OSM":osm,"HOT":hot}, null, {position:'topright'}).addTo(map);
+
+const typeConfig = {
+  station:{color:'#ff6600',radius:8},
+  small:{color:'#33bbff',radius:10},
+  stream:{color:'#3399ff',radius:12},
+  default:{color:'#666',radius:8}
+};
+const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+const tooltipOption = isMobile ? {permanent:false} : {permanent:true,className:'station-tooltip',direction:'top',offset:[0,-10]};
+
+// 내 위치 아이콘
+const myIcon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41]
+});
+
+function createMarker(f){
+  const c = typeConfig[f.type] || typeConfig.default;
+  return L.circleMarker([f.lat,f.lng], {
+    radius:c.radius, color:'#000', weight:1, fillColor:c.color, fillOpacity:0.85
+  }).bindTooltip(f.name, tooltipOption);
+}
+
+function refreshMarkers(){
+  markerClusterGroup.clearLayers();
+  markers = facilities.map(f => ({ layer:createMarker(f), type:f.type }));
+  filterMarkers();
+  map.addLayer(markerClusterGroup);
+}
+
+function filterMarkers(){
+  const showSmall   = document.getElementById("showSmall").checked;
+  const showStream  = document.getElementById("showStream").checked;
+  const showStation = document.getElementById("showStation").checked;
+  markerClusterGroup.clearLayers();
+  markers.forEach(m=>{
+    if ((m.type==='small'&&showSmall) || (m.type==='stream'&&showStream) || (m.type==='station'&&showStation)) {
+      markerClusterGroup.addLayer(m.layer);
+    }
+  });
+}
+
+async function loadFacilities(){
+  try{
+    const res = await fetch(GIST_URL, { cache:"no-store" });
+    if (!res.ok) throw new Error("불러오기 실패");
+    facilities = await res.json();
+    refreshMarkers();
+    setTimeout(()=>map.invalidateSize(), 0);
+  } catch(e){
+    console.error(e);
+    showToast("⚠️ 데이터 불러오기 실패");
+  }
+}
+loadFacilities();
+
+// GPS 추적
+function toggleTracking(){
+  const gpsBtn = document.querySelector(".gps-btn");
+  if (tracking){
+    navigator.geolocation.clearWatch(watchId);
+    tracking=false;
+    gpsBtn.textContent="⚪";
+    gpsBtn.style.background="#777";
+    showToast("🛑 실시간 추적 종료");
+  } else {
+    if (!navigator.geolocation){ showToast("⚠️ GPS 미지원"); return; }
+    watchId = navigator.geolocation.watchPosition(
+      pos=>{
+        const { latitude:lat, longitude:lng } = pos.coords;
+        if (myLocationMarker) map.removeLayer(myLocationMarker);
+        myLocationMarker = L.marker([lat,lng], { icon: myIcon })
+          .bindPopup("📍 내 위치").addTo(map);
+        map.flyTo([lat,lng],14);
+      },
+      err=>{
+        showToast("⚠️ 위치 접근 실패");
+        gpsBtn.textContent="⚪"; gpsBtn.style.background="#777";
+      },
+      { enableHighAccuracy:true, maximumAge:5000, timeout:10000 }
+    );
+    tracking=true;
+    gpsBtn.textContent="🔵";
+    gpsBtn.style.background="#00b894";
+    showToast("📡 실시간 추적 시작");
+  }
+}
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 1500);
+}
+
+/* 초기/리사이즈 보정: 모바일 레이아웃 이슈 방지 */
+window.addEventListener('load', ()=> setTimeout(()=>map.invalidateSize(), 0));
+window.addEventListener('resize', ()=>{
+  map.invalidateSize();
+  document.body.offsetHeight; // no-op reflow for iOS
+});
+</script>
+</body>
+</html>
