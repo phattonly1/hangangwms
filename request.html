@@ -32,14 +32,19 @@ th,td{padding:14px 12px;border-bottom:1px solid var(--bd);text-align:center;vert
 th{background:#f1f5ff;color:#1e3a8a;font-weight:800;position:sticky;top:0;z-index:1}
 tbody tr:nth-child(odd){background:#fcfdff}
 tbody tr:hover{background:#f9fbff}
+/* 요청물품 셀: 줄바꿈 허용(중앙정렬 유지) */
+.cell-item{white-space:normal;word-break:keep-all;line-height:1.4}
+
 /* 배지 */
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700}
 .badge.done{background:#ecfdf5;color:var(--ok)}
 .badge.req{background:#fff7ed;color:var(--warn)}
 .badge.prog{background:#eef2ff;color:var(--mid)}
+
 /* 페이지네이션 */
 .pagination{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:12px 0}
 .page-btn{padding:8px 12px;border:1px solid var(--bd);border-radius:10px;background:#fff;cursor:pointer}
+
 /* 모달(리디자인) */
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);align-items:center;justify-content:center;z-index:100}
 .modal.show{display:flex}
@@ -52,12 +57,14 @@ tbody tr:hover{background:#f9fbff}
 @media (max-width:640px){
   .form-grid{grid-template-columns:1fr}
 }
+
 /* 저장중 오버레이 + 토스트 */
 .saving{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:120}
 .saving.hidden{display:none}
 .saving .box{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:18px 20px;font-weight:800;box-shadow:0 10px 30px rgba(0,0,0,.2)}
-.toast{position:fixed;right:16px;bottom:16px;background:rgba(0,0,0,.85);color:#fff;padding:10px 12px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:150}
+.toast{position:fixed;right:16px;bottom:16px;background:rgba(0,0,0,0.85);color:#fff;padding:10px 12px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:150}
 .toast.show{opacity:1}
+
 /* 모바일 카드뷰 */
 .cards{display:none}
 .card-item{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
@@ -66,11 +73,33 @@ tbody tr:hover{background:#f9fbff}
 .card-sub{color:#64748b;font-size:12px}
 .card-mid{margin:6px 0 10px;font-size:15px}
 .card-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.card-actions .select{min-width:120px;padding:8px 10px}
+.card-actions .select{min-width:110px;padding:8px 10px}
 .card-actions .btn{padding:8px 10px}
+
+/* 아이콘 버튼 */
+.icon-btn{
+  appearance:none; border:0; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  width:36px; height:36px; border-radius:10px;
+  background:#fff; border:1px solid var(--bd); box-shadow:0 2px 6px rgba(0,0,0,.06);
+}
+.icon-btn.primary{ background:var(--accent); border-color:var(--accent); }
+.icon-btn.primary svg{ stroke:#fff; }
+.icon-btn.ghost{ background:#fff; border-color:#93c5fd; }
+.icon-btn.danger{ background:#dc2626; border-color:#dc2626; }
+.icon-btn.danger svg{ stroke:#fff; }
+.icon-btn:hover{ transform:translateY(-1px); }
+.icon-btn svg{ width:18px; height:18px; stroke:#334155; stroke-width:2; fill:none; }
+.icon-btn .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+/* 모바일에서 더 타이트하게 + 한 줄 유지 */
 @media (max-width:640px){
   .card table{display:none}
   .cards{display:grid;gap:10px}
+  .card-actions{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; gap:6px; }
+  .card-actions .select{ min-width:92px; padding:6px 8px; font-size:14px; }
+  .card-actions .icon-btn{ width:34px; height:34px; }
+  .card-actions .badge{ white-space:nowrap; font-size:12px; padding:3px 8px; }
 }
 </style>
 </head>
@@ -82,21 +111,33 @@ tbody tr:hover{background:#f9fbff}
 
   <main class="wrap">
     <div class="toolbar">
-      <button class="btn primary" id="btnOpenAdd">추가하기</button>
-      <button class="btn ghost" id="btnReload">새로고침</button>
-      <button class="btn ghost" id="btnCSV">CSV 내보내기</button>
+      <button class="btn primary" id="btnOpenAdd" title="새 요청 추가">추가하기</button>
+      <button class="btn ghost" id="btnReload" title="데이터 새로고침">새로고침</button>
+      <button class="btn ghost" id="btnCSV" title="CSV 파일로 내보내기">CSV 내보내기</button>
       <span class="muted" id="summary">총 0건</span>
     </div>
 
     <div class="card" role="region" aria-label="요청 현황 표">
       <table id="tbl">
+        <!-- 열 너비 지정: 요청자 좁게, 요청물품 넓게 -->
+        <colgroup>
+          <!-- 요청일 / 요청자 / 요청물품 / 개수 / 진행상태 / 빠른변경 / 수정 / 삭제 -->
+          <col style="width:12%">
+          <col style="width:9%">
+          <col style="width:38%">   <!-- 요청물품 크게 -->
+          <col style="width:8%">
+          <col style="width:10%">
+          <col style="width:15%">
+          <col style="width:4%">
+          <col style="width:4%">
+        </colgroup>
         <thead>
           <tr>
-            <th data-k="요청일">요청일</th>
-            <th data-k="요청자">요청자</th>
-            <th data-k="요청물품">요청물품</th>
-            <th data-k="개수">개수</th>
-            <th data-k="진행사항">진행상태</th>
+            <th data-k="요청일" title="요청일 정렬">요청일</th>
+            <th data-k="요청자" title="요청자 정렬">요청자</th>
+            <th data-k="요청물품" title="요청물품 정렬">요청물품</th>
+            <th data-k="개수" title="개수 정렬">개수</th>
+            <th data-k="진행사항" title="진행상태 정렬">진행상태</th>
             <th>빠른변경</th>
             <th>수정</th>
             <th>삭제</th>
@@ -112,9 +153,9 @@ tbody tr:hover{background:#f9fbff}
     <div id="cards" class="cards" aria-live="polite"></div>
 
     <div class="pagination">
-      <button class="page-btn" id="prev">이전</button>
+      <button class="page-btn" id="prev" title="이전 페이지">이전</button>
       <span id="pageinfo" class="muted">0 / 0</span>
-      <button class="page-btn" id="next">다음</button>
+      <button class="page-btn" id="next" title="다음 페이지">다음</button>
     </div>
   </main>
 
@@ -129,7 +170,7 @@ tbody tr:hover{background:#f9fbff}
           <div class="field">
             <label for="f_date">요청일</label>
             <input id="f_date" type="date" name="date" required />
-            <small>오늘 날짜는 자동 선택되지 않아요.</small>
+            <small>YYYY-MM-DD 형식</small>
           </div>
           <div class="field">
             <label for="f_who">요청자</label>
@@ -153,8 +194,8 @@ tbody tr:hover{background:#f9fbff}
           </div>
         </div>
         <div class="actions">
-          <button type="button" class="btn ghost" id="btnCancel">취소</button>
-          <button type="submit" class="btn primary" id="btnSubmit">저장</button>
+          <button type="button" class="btn ghost" id="btnCancel" title="창 닫기">취소</button>
+          <button type="submit" class="btn primary" id="btnSubmit" title="저장하기">저장</button>
         </div>
       </form>
     </div>
@@ -268,7 +309,7 @@ function applyAndRender(){
   $("#pageinfo").textContent = `${page} / ${total}`;
   $("#summary").textContent = `총 ${view.length}건`;
 
-  // 표 렌더
+  // 테이블 렌더 (ID는 data-id로 보관)
   const tbody = $("#tbody");
   if (!slice.length){
     tbody.innerHTML = '<tr><td colspan="8">데이터가 없습니다.</td></tr>';
@@ -277,19 +318,32 @@ function applyAndRender(){
       <tr data-id="${r.ID ?? ""}">
         <td>${r.요청일 ?? ""}</td>
         <td>${r.요청자 ?? ""}</td>
-        <td>${r.요청물품 ?? ""}</td>
+        <td class="cell-item">${r.요청물품 ?? ""}</td>
         <td>${r.개수 ?? ""}</td>
         <td>${badge(r.진행사항)}</td>
         <td>
-          <select class="select" data-quick="${r.ID ?? ""}">
+          <select class="select" data-quick="${r.ID ?? ""}" title="상태 선택" aria-label="상태 선택">
             <option ${r.진행사항==='요청'?'selected':''}>요청</option>
             <option ${r.진행사항==='진행중'?'selected':''}>진행중</option>
             <option ${r.진행사항==='완료'?'selected':''}>완료</option>
           </select>
-          <button class="btn ghost" style="padding:6px 10px" data-save="${r.ID ?? ""}">변경</button>
+          <button class="icon-btn ghost" aria-label="상태 변경" title="선택한 상태로 변경" data-save="${r.ID ?? ""}">
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <span class="sr-only">변경</span>
+          </button>
         </td>
-        <td><button class="btn" style="padding:6px 10px" data-edit="${r.ID ?? ""}">수정</button></td>
-        <td><button class="btn danger" style="padding:6px 10px" data-del="${r.ID ?? ""}">삭제</button></td>
+        <td>
+          <button class="icon-btn" aria-label="수정" title="내용 수정" data-edit="${r.ID ?? ""}">
+            <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5l4 4L7 21l-4 1 1-4 12.5-14.5z"/></svg>
+            <span class="sr-only">수정</span>
+          </button>
+        </td>
+        <td>
+          <button class="icon-btn danger" aria-label="삭제" title="영구 삭제" data-del="${r.ID ?? ""}">
+            <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6v14m8-14v14M10 6l1-2h2l1 2"/></svg>
+            <span class="sr-only">삭제</span>
+          </button>
+        </td>
       </tr>
     `).join("");
   }
@@ -316,14 +370,23 @@ function applyAndRender(){
           </div>
           <div class="card-actions">
             <span>${badge(r.진행사항)}</span>
-            <select class="select" data-quick-m="${r.ID ?? ''}">
+            <select class="select" data-quick-m="${r.ID ?? ''}" title="상태 선택" aria-label="상태 선택">
               <option ${r.진행사항==='요청'?'selected':''}>요청</option>
               <option ${r.진행사항==='진행중'?'selected':''}>진행중</option>
               <option ${r.진행사항==='완료'?'selected':''}>완료</option>
             </select>
-            <button class="btn ghost" data-save-m="${r.ID ?? ''}">변경</button>
-            <button class="btn" data-edit-m="${r.ID ?? ''}">수정</button>
-            <button class="btn danger" data-del-m="${r.ID ?? ''}">삭제</button>
+            <button class="icon-btn ghost" aria-label="상태 변경" title="선택한 상태로 변경" data-save-m="${r.ID ?? ''}">
+              <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              <span class="sr-only">변경</span>
+            </button>
+            <button class="icon-btn" aria-label="수정" title="내용 수정" data-edit-m="${r.ID ?? ''}">
+              <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5l4 4L7 21l-4 1 1-4 12.5-14.5z"/></svg>
+              <span class="sr-only">수정</span>
+            </button>
+            <button class="icon-btn danger" aria-label="삭제" title="영구 삭제" data-del-m="${r.ID ?? ''}">
+              <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6v14m8-14v14M10 6l1-2h2l1 2"/></svg>
+              <span class="sr-only">삭제</span>
+            </button>
           </div>
         `;
         frag.appendChild(el);
@@ -351,35 +414,37 @@ function applyAndRender(){
         b.onclick = ()=>{
           const id = b.getAttribute('data-del-m');
           if (!id) return toast('ID 누락으로 삭제 불가');
-          if (confirm('해당 항목을 삭제할까요?')) quickDelete(id);
+          if (confirm('해당 항목을 삭제할까요?')) quickDelete(id);  // ID 문구 제거
         };
       });
     }
   }
 
   // 테이블 이벤트
-  tbody.querySelectorAll("[data-save]").forEach(btn=>{
-    btn.onclick = ()=>{
-      const id = btn.getAttribute("data-save");
-      const sel = tbody.querySelector(`select[data-quick="${id}"]`);
-      if (!id) return toast("ID 누락으로 변경할 수 없습니다.");
-      quickUpdate(id, sel.value);
-    };
-  });
-  tbody.querySelectorAll("[data-edit]").forEach(btn=>{
-    btn.onclick = ()=>{
-      const id = btn.getAttribute("data-edit");
-      const full = raw.find(x => String(x.ID) === String(id));
-      if (full) openModal("update", full); else toast("항목을 찾을 수 없습니다.");
-    };
-  });
-  tbody.querySelectorAll("[data-del]").forEach(btn=>{
-    btn.onclick = ()=>{
-      const id = btn.getAttribute("data-del");
-      if (!id) return toast("ID 누락으로 삭제할 수 없습니다.");
-      if (confirm(`해당 항목을 삭제할까요?`)) quickDelete(id);
-    };
-  });
+  if (slice.length){
+    tbody.querySelectorAll("[data-save]").forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = btn.getAttribute("data-save");
+        const sel = tbody.querySelector(`select[data-quick="${id}"]`);
+        if (!id) return toast("ID 누락으로 변경할 수 없습니다.");
+        quickUpdate(id, sel.value);
+      };
+    });
+    tbody.querySelectorAll("[data-edit]").forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = btn.getAttribute("data-edit");
+        const full = raw.find(x => String(x.ID) === String(id));
+        if (full) openModal("update", full); else toast("항목을 찾을 수 없습니다.");
+      };
+    });
+    tbody.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = btn.getAttribute("data-del");
+        if (!id) return toast("ID 누락으로 삭제할 수 없습니다.");
+        if (confirm('해당 항목을 삭제할까요?')) quickDelete(id);  // ID 문구 제거
+      };
+    });
+  }
 }
 
 /* === 모달/폼 === */
