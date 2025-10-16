@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>통합 대시보드</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background-color: #f5f6fa;
+    }
+
+    /* 탭 영역 */
+    .tab-container {
+      display: flex;
+      background: #2c3e50;
+      color: white;
+      height: 48px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px 0;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab:hover {
+      background: #34495e;
+    }
+
+    .tab.active {
+      background: #1abc9c;
+      border-bottom: 3px solid #16a085;
+    }
+
+    /* 콘텐츠 영역 (iframe) */
+    iframe {
+      width: 100%;
+      height: calc(100vh - 48px);
+      border: none;
+      display: none;
+    }
+
+    iframe.active {
+      display: block;
+    }
+
+    /* 모바일 대응 */
+    @media (max-width: 600px) {
+      .tab-container {
+        flex-direction: column;
+        height: auto;
+      }
+      .tab {
+        border-bottom: none;
+        border-right: 3px solid transparent;
+      }
+      .tab.active {
+        border-right: 3px solid #16a085;
+      }
+      iframe {
+        height: calc(100vh - 96px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 탭 -->
+  <div class="tab-container">
+    <div class="tab active" onclick="showTab('map')">📍 지도 보기</div>
+    <div class="tab" onclick="showTab('request')">🧾 요청 현황</div>
+  </div>
+
+  <!-- 페이지 콘텐츠 -->
+  <iframe
+    id="map"
+    class="active"
+    src="https://phattonly1.github.io/dongbuwateritem/"
+  ></iframe>
+
+  <iframe
+    id="request"
+    src="https://script.google.com/macros/s/AKfycbxL_pYXuoKz_XUPM-UmmpFNI99wW24aqbpwa4F23bIpqpMvBJjOcG-crgeuvKI7VA8hug/exec"
+  ></iframe>
+
+  <script>
+    function showTab(tabId) {
+      document
+        .querySelectorAll('.tab, iframe')
+        .forEach((el) => el.classList.remove('active'));
+      document
+        .querySelector(`.tab[onclick*="${tabId}"]`)
+        .classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+  </script>
+</body>
+</html>
