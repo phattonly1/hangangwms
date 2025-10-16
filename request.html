@@ -12,35 +12,27 @@
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;font-family:ui-sans-serif,system-ui,Apple SD Gothic Neo,Pretendard;}
-body{background:#f5f7fb;color:var(--ink);}
-
-/* header */
+body{background:#f4f6fb;color:var(--ink);}
 header{display:flex;align-items:center;gap:10px;background:#fff;border-bottom:1px solid #ddd;
-  padding:10px 16px;position:sticky;top:0;z-index:1000;}
+  padding:10px 16px;position:sticky;top:0;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.05);}
 header img{width:44px;height:44px;object-fit:contain;}
 header h1{margin:0;font-size:1.5rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
-/* layout */
-main{max-width:1200px;margin:0 auto;padding:16px;}
+main{max-width:1100px;margin:0 auto;padding:20px;}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 16px;}
 .btn{padding:10px 14px;border-radius:8px;border:0;font-weight:700;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.1);}
 .btn.primary{background:var(--btn);color:#fff;}
 .btn.ghost{background:#fff;color:var(--btn);border:1px solid #93c5fd;}
 .btn.danger{background:#dc2626;color:#fff;}
-.input,.select{padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:#fff;}
-.muted{color:var(--muted);font-size:13px;}
-.table-wrap{background:#fff;border:1px solid var(--bd);border-radius:10px;overflow:auto;}
-table{width:100%;border-collapse:collapse;}
-th,td{padding:10px;border-bottom:1px solid var(--bd);white-space:nowrap;}
-th{background:#f0f4ff;font-weight:700;cursor:pointer;}
+.table-wrap{background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:auto;box-shadow:0 3px 12px rgba(0,0,0,.06);}
+table{width:100%;border-collapse:collapse;font-size:15px;}
+th,td{padding:12px;text-align:center;border-bottom:1px solid var(--bd);}
+th{background:#eef2ff;font-weight:700;color:#1e3a8a;}
 tr:hover{background:#fafafa;}
-.right{text-align:right;}
-.status-badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:12px;}
+.status-badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:600;}
 .status-badge.pending{background:#fff7ed;color:#9a3412;}
 .status-badge.prog{background:#eef2ff;color:#3730a3;}
 .status-badge.done{background:#ecfdf5;color:#065f46;}
-.pagination{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:10px 0;}
-.page-btn{padding:6px 10px;border:1px solid var(--bd);border-radius:8px;background:#fff;cursor:pointer;}
+.muted{color:var(--muted);font-size:13px;}
 .toast{position:fixed;right:16px;bottom:16px;background:rgba(0,0,0,.85);color:#fff;
   padding:10px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:.25s;z-index:3000;}
 .toast.show{opacity:1;}
@@ -52,6 +44,8 @@ tr:hover{background:#fafafa;}
 .modal .panel{background:#fff;padding:20px;border-radius:12px;width:95%;max-width:420px;}
 .field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
 .actions{display:flex;justify-content:flex-end;gap:10px;}
+.pagination{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:10px 0;}
+.page-btn{padding:6px 10px;border:1px solid var(--bd);border-radius:8px;background:#fff;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -72,18 +66,17 @@ tr:hover{background:#fafafa;}
     <table>
       <thead>
         <tr>
-          <th data-k="ID">ID</th>
           <th data-k="요청일">요청일</th>
           <th data-k="요청자">요청자</th>
           <th data-k="요청물품">요청물품</th>
-          <th class="right" data-k="개수">개수</th>
+          <th data-k="개수">개수</th>
           <th data-k="진행사항">진행상태</th>
           <th>빠른변경</th>
           <th>수정</th>
           <th>삭제</th>
         </tr>
       </thead>
-      <tbody id="tbody"><tr><td colspan="9">불러오는 중...</td></tr></tbody>
+      <tbody id="tbody"><tr><td colspan="8">불러오는 중...</td></tr></tbody>
     </table>
   </div>
 
@@ -129,124 +122,74 @@ tr:hover{background:#fafafa;}
 
 <iframe name="hidden_iframe" id="hidden_iframe" style="display:none"></iframe>
 <div id="savingPopup" class="saving hidden"><div class="box">요청을 저장 중입니다…</div></div>
-<div id="toast" class="toast">처리되었습니다</div>
+<div id="toast" class="toast"></div>
 
 <script>
-/* === 설정 === */
-const SHEET_ID = "13-0Qp2ImIIURJqv-YbklEVbsNYLPz_akDRwO2lDeEvM";
-const GID = "0";
-const APPS_SCRIPT_EXEC = "https://script.google.com/macros/s/AKfycbyxNNfPgvSeL0o9lSwFRlS7YRrKSt3Qv4baQUOy2oV1M5WkvBu-ciyTKQZuf9p6rPmsDg/exec";
-
-/* === 전역 === */
-let raw=[],view=[]; let page=1,pageSize=10,sortKey="ID",sortDir="desc"; let isSubmitting=false;
+const SHEET_ID="13-0Qp2ImIIURJqv-YbklEVbsNYLPz_akDRwO2lDeEvM";
+const GID="0";
+const APPS_SCRIPT_EXEC="https://script.google.com/macros/s/AKfycbyxNNfPgvSeL0o9lSwFRlS7YRrKSt3Qv4baQUOy2oV1M5WkvBu-ciyTKQZuf9p6rPmsDg/exec";
+let raw=[],view=[];let page=1,pageSize=10,sortKey="요청일",sortDir="desc",isSubmitting=false;
 const $=s=>document.querySelector(s);
 const toast=t=>{const el=$("#toast");el.textContent=t;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),1500);};
-const normDate=v=>{if(!v)return'';if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;return String(v).replace(/[.\s]/g,'-');};
-const sel=(cur,val)=>String(cur||'').trim()===val?'selected':'';
-function badge(v){const t=(v||'').trim();if(t==='완료')return'<span class="status-badge done">완료</span>';if(t==='요청')return'<span class="status-badge pending">요청</span>';if(t==='진행중')return'<span class="status-badge prog">진행중</span>';return'';}
-
-/* === 데이터 로드 === */
+function badge(v){const t=(v||"").trim();if(t==="완료")return'<span class="status-badge done">완료</span>';if(t==="요청")return'<span class="status-badge pending">요청</span>';if(t==="진행중")return'<span class="status-badge prog">진행중</span>';return'';}
+function toDateString(d){try{const dt=new Date(d);return isNaN(dt)?"":dt.toISOString().split("T")[0];}catch{return d;}}
 function load(){
   const old=document.getElementById("gviz");if(old)old.remove();
-  $("#tbody").innerHTML='<tr><td colspan="9">불러오는 중...</td></tr>';
+  $("#tbody").innerHTML='<tr><td colspan="8">불러오는 중...</td></tr>';
   const s=document.createElement("script");
   s.id="gviz";
   s.src=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json;responseHandler:renderGViz&_=${Date.now()}`;
   document.body.appendChild(s);
 }
-
 window.renderGViz=function(resp){
   try{
     const table=resp.table;
     const cols=table.cols.map(c=>c.label);
     const rows=(table.rows||[]).map(r=>(r.c||[]).map(c=>c?c.v:''));
-    const idx={id:cols.indexOf("ID"),date:cols.indexOf("요청일"),who:cols.indexOf("요청자"),
-               item:cols.indexOf("요청물품"),qty:cols.indexOf("개수"),stat:cols.indexOf("진행사항")};
-    raw=rows.map(r=>({ID:r[idx.id],요청일:r[idx.date],요청자:r[idx.who],요청물품:r[idx.item],개수:r[idx.qty],진행사항:r[idx.stat]}))
-            .filter(r=>r.ID);
+    const idx={date:cols.indexOf("요청일"),who:cols.indexOf("요청자"),item:cols.indexOf("요청물품"),qty:cols.indexOf("개수"),stat:cols.indexOf("진행사항")};
+    raw=rows.map(r=>({
+      요청일:toDateString(r[idx.date]),
+      요청자:r[idx.who],
+      요청물품:r[idx.item],
+      개수:r[idx.qty],
+      진행사항:r[idx.stat]
+    })).filter(r=>r.요청자||r.요청물품);
     applyAndRender();
   }catch(e){toast("표시 실패: "+e.message);}
 };
-
-/* === 렌더 === */
 function applyAndRender(){
   view=[...raw];
-  view.sort((a,b)=>{const A=a[sortKey],B=b[sortKey];return sortDir==='asc'?(A>B?1:-1):(A<B?1:-1);});
-  const total=Math.max(1,Math.ceil(view.length/pageSize));
-  if(page>total)page=total;
+  view.sort((a,b)=>sortDir==='asc'?(a[sortKey]>b[sortKey]?1:-1):(a[sortKey]<b[sortKey]?1:-1));
+  const total=Math.max(1,Math.ceil(view.length/pageSize));if(page>total)page=total;
   const slice=view.slice((page-1)*pageSize,page*pageSize);
   $("#pageinfo").textContent=`${page} / ${total}`;
   $("#summary").textContent=`총 ${view.length}건`;
   const tb=$("#tbody");
-  if(!slice.length){tb.innerHTML='<tr><td colspan="9">데이터 없음</td></tr>';return;}
+  if(!slice.length){tb.innerHTML='<tr><td colspan="8">데이터 없음</td></tr>';return;}
   tb.innerHTML=slice.map(r=>`
     <tr>
-      <td>${r.ID}</td>
       <td>${r.요청일}</td>
       <td>${r.요청자}</td>
       <td>${r.요청물품}</td>
-      <td class="right">${r.개수}</td>
+      <td>${r.개수}</td>
       <td>${badge(r.진행사항)}</td>
       <td>
-        <select data-quick="${r.ID}" class="select">
-          <option ${sel(r.진행사항,'요청')}>요청</option>
-          <option ${sel(r.진행사항,'진행중')}>진행중</option>
-          <option ${sel(r.진행사항,'완료')}>완료</option>
+        <select class="select" data-item="${r.요청물품}">
+          <option ${r.진행사항==='요청'?'selected':''}>요청</option>
+          <option ${r.진행사항==='진행중'?'selected':''}>진행중</option>
+          <option ${r.진행사항==='완료'?'selected':''}>완료</option>
         </select>
-        <button class="btn ghost" style="padding:6px 10px" data-save="${r.ID}">변경</button>
+        <button class="btn ghost" style="padding:6px 10px">변경</button>
       </td>
-      <td><button class="btn" data-edit="${r.ID}" style="padding:6px 10px">수정</button></td>
-      <td><button class="btn danger" data-del="${r.ID}" style="padding:6px 10px">삭제</button></td>
+      <td><button class="btn" style="padding:6px 10px">수정</button></td>
+      <td><button class="btn danger" style="padding:6px 10px">삭제</button></td>
     </tr>`).join("");
-  tb.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>quickUpdate(b.dataset.save,$(`[data-quick="${b.dataset.save}"]`).value));
-  tb.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{if(confirm("삭제할까요?"))quickDelete(b.dataset.del);});
-  tb.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openModal('update',raw.find(x=>x.ID===b.dataset.edit)));
 }
-
-/* === 모달 === */
-const modal=$("#modal"),form=$("#postForm"),btnSubmit=$("#btnSubmit"),saving=$("#savingPopup");
-$("#btnOpenAdd").onclick=()=>openModal('add');
-$("#btnCancel").onclick=()=>modal.classList.remove('show');
-function openModal(mode,row){
-  modal.classList.add('show');
-  form.action=APPS_SCRIPT_EXEC;
-  if(mode==='add'){form.op.value='add';form.id.value='';form.date.value='';form.who.value='';form.item.value='';form.qty.value='';form.status.value='요청';}
-  else{form.op.value='update';form.id.value=row.ID;form.date.value=row.요청일;form.who.value=row.요청자;form.item.value=row.요청물품;form.qty.value=row.개수;form.status.value=row.진행사항;}
-}
-form.addEventListener('submit',e=>{
-  if(isSubmitting){e.preventDefault();return;}
-  isSubmitting=true;btnSubmit.disabled=true;btnSubmit.textContent='저장 중…';saving.classList.remove('hidden');
-});
-$("#hidden_iframe").addEventListener('load',()=>{
-  isSubmitting=false;btnSubmit.disabled=false;btnSubmit.textContent='저장';saving.classList.add('hidden');
-  modal.classList.remove('show');toast('처리되었습니다');load();
-});
-
-/* === 상태 변경 / 삭제 === */
-function quickUpdate(id,status){
-  const f=document.createElement('form');f.method='POST';f.action=APPS_SCRIPT_EXEC;f.target='hidden_iframe';
-  [['op','update'],['id',id],['status',status]].forEach(([k,v])=>{const i=document.createElement('input');i.type='hidden';i.name=k;i.value=v;f.appendChild(i);});
-  document.body.appendChild(f);f.submit();toast('상태 변경 중…');
-}
-function quickDelete(id){
-  const f=document.createElement('form');f.method='POST';f.action=APPS_SCRIPT_EXEC;f.target='hidden_iframe';
-  [['op','delete'],['id',id]].forEach(([k,v])=>{const i=document.createElement('input');i.type='hidden';i.name=k;i.value=v;f.appendChild(i);});
-  document.body.appendChild(f);f.submit();toast('삭제 중…');
-}
-
-/* === 기타 === */
+$("#btnOpenAdd").onclick=()=>$("#modal").classList.add("show");
+$("#btnCancel").onclick=()=>$("#modal").classList.remove("show");
 $("#btnReload").onclick=load;
-$("#btnCSV").onclick=()=>{
-  const header=['ID','요청일','요청자','요청물품','개수','진행사항'];
-  const rows=view.map(r=>[r.ID,r.요청일,r.요청자,r.요청물품,r.개수,r.진행사항]);
-  const csv=[header].concat(rows).map(a=>a.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='requests.csv';a.click();URL.revokeObjectURL(url);
-};
 $("#prev").onclick=()=>{if(page>1){page--;applyAndRender();}};
 $("#next").onclick=()=>{page++;applyAndRender();};
-document.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortKey===k)sortDir=sortDir==='asc'?'desc':'asc';else{sortKey=k;sortDir='asc';}applyAndRender();});
-
 load();
 </script>
 </body>
