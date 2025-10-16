@@ -10,8 +10,7 @@
 <style>
   :root{
     --bg1:#e6f4ff; --bg2:#f4fbff; --ink:#0b2239; --muted:#365b7a;
-    --card:#ffffff; --primary:#0077ff; --primary-ink:#fff;
-    --ring: rgba(0,119,255,.25);
+    --card:#ffffff; --ring: rgba(0,119,255,.25);
   }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Pretendard,Arial}
@@ -34,14 +33,38 @@
     box-shadow: 0 20px 50px rgba(0,0,0,.08);
   }
 
-  .title{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  /* 헤더: 로고 + 제목 한 줄 유지 */
+  .title{
+    display:grid;
+    grid-template-columns:auto 1fr; /* [로고][제목영역] */
+    align-items:center;
+    column-gap:14px;
+  }
   .logo-img{
-    width:52px; height:52px; object-fit:contain; flex:0 0 auto;
+    width:52px; height:52px; object-fit:contain;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,.15));
   }
-  h1{ margin:0; font-size: clamp(22px, 3.2vw, 34px); font-weight:800; letter-spacing:-0.02em; }
-  p.sub{ margin:8px 0 0; color:var(--muted); line-height:1.5; font-size:clamp(14px,1.6vw,16px); }
+  .title-text{ min-width:0; }
+  .title-text h1{
+    margin:0;
+    font-weight:800; letter-spacing:-0.02em; line-height:1.1;
+    /* 화면 폭에 따라 자동 축소, 한 줄 고정 */
+    font-size: clamp(18px, 5.2vw, 34px);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .title-text .sub{
+    margin:8px 0 0; color:var(--muted); line-height:1.5;
+    font-size:clamp(13px, 1.8vw, 16px);
+  }
+  @media (max-width: 420px){
+    .logo-img{ width:44px; height:44px; }
+  }
+  @media (max-width: 340px){
+    .logo-img{ width:40px; height:40px; }
+    .title-text h1{ font-size: clamp(16px, 5.5vw, 28px); }
+  }
 
+  /* 카드 그리드 */
   .grid{
     margin-top:28px;
     display:grid; gap:16px;
@@ -57,12 +80,12 @@
     transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
     position:relative; overflow:hidden;
   }
-  .card:focus-visible{ outline: 3px solid var(--ring); outline-offset:3px; }
   .card:hover{
     transform: translateY(-3px);
     box-shadow: 0 14px 34px rgba(15,45,80,.12);
     border-color: rgba(0,119,255,.25);
   }
+  .card:focus-visible{ outline: 3px solid var(--ring); outline-offset:3px; }
   .card .icon{
     width:40px; height:40px; border-radius:10px;
     display:grid; place-items:center; font-size:20px;
@@ -71,7 +94,7 @@
   .card h3{ margin:6px 0 6px; font-size:18px; }
   .card p{ margin:0; color:#44607a; font-size:14px; }
 
-  /* 버튼(.cta) 블록 완전 제거했어요 */
+  /* 하단 CTA 버튼 블록은 제거 */
 </style>
 </head>
 <body>
@@ -79,7 +102,7 @@
     <section class="hero" aria-labelledby="title">
       <div class="title">
         <img class="logo-img" src="./assets/gongdan-mark.png" alt="공단 마크" />
-        <div>
+        <div class="title-text">
           <h1 id="title">한강수계 수질측정망</h1>
           <p class="sub">대시보드에서 항목을 선택해 지도를 열거나, 소모품 요청 현황을 확인하세요.</p>
         </div>
@@ -98,8 +121,6 @@
           <p>소모품 요청 폼 & 실시간 반영 현황을 한 곳에서 확인합니다.</p>
         </a>
       </div>
-
-      <!-- 하단 버튼 제거됨 -->
     </section>
   </main>
 </body>
