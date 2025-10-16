@@ -9,6 +9,8 @@
 :root {
   --ink:#0b2239; --muted:#64748b; --bd:#e5e7eb; --panel:#ffffff; --accent:#2563eb;
   --ok:#065f46; --warn:#9a3412; --mid:#3730a3;
+  --ctl-h: 38px;                 /* ✅ 공통 컨트롤(버튼/셀렉트) 높이 */
+  --radius: 10px;                /* 둥글기 */
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;font-family:ui-sans-serif,system-ui,Apple SD Gothic Neo,Pretendard; color:var(--ink); background:#f4f6fb;}
@@ -19,11 +21,12 @@ html,body{margin:0;padding:0;font-family:ui-sans-serif,system-ui,Apple SD Gothic
 /* 레이아웃/툴바 */
 .wrap{max-width:1200px;margin:0 auto;padding:18px}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
-.btn{appearance:none;border:0;border-radius:10px;padding:12px 16px;font-weight:800;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.06)}
+.btn{appearance:none;border:0;border-radius:var(--radius);padding:0 14px;font-weight:800;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.06);height:var(--ctl-h);display:inline-flex;align-items:center;justify-content:center}
 .btn.primary{background:var(--accent);color:#fff}
 .btn.ghost{background:#fff;color:var(--accent);border:1px solid #93c5fd}
 .btn.danger{background:#dc2626;color:#fff}
-.input,.select,textarea{padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:#fff}
+.input,.select,textarea{border:1px solid var(--bd);border-radius:var(--radius);background:#fff}
+.input,.select{height:var(--ctl-h);padding:0 12px}
 .muted{color:var(--muted);font-size:13px}
 /* 카드형 테이블 컨테이너 */
 .card{background:var(--panel);border:1px solid var(--bd);border-radius:14px;overflow:auto;box-shadow:0 10px 30px rgba(16,24,40,.06)}
@@ -34,37 +37,38 @@ tbody tr:nth-child(odd){background:#fcfdff}
 tbody tr:hover{background:#f9fbff}
 /* 요청물품 셀: 줄바꿈 허용(중앙정렬 유지) */
 .cell-item{white-space:normal;word-break:keep-all;line-height:1.4}
-
+/* 빠른변경: 드롭다운+아이콘 높이/정렬 완전 일치 */
+.quick-wrap{display:inline-flex;align-items:center;gap:8px}
+.quick-wrap .select{min-width:120px}
 /* 배지 */
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700}
 .badge.done{background:#ecfdf5;color:var(--ok)}
 .badge.req{background:#fff7ed;color:var(--warn)}
 .badge.prog{background:#eef2ff;color:var(--mid)}
-
 /* 페이지네이션 */
 .pagination{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:12px 0}
-.page-btn{padding:8px 12px;border:1px solid var(--bd);border-radius:10px;background:#fff;cursor:pointer}
-
-/* 모달(리디자인) */
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);align-items:center;justify-content:center;z-index:100}
+.page-btn{padding:0 12px;border:1px solid var(--bd);border-radius:var(--radius);background:#fff;cursor:pointer;height:var(--ctl-h);display:inline-flex;align-items:center}
+/* 모달(세련 리디자인) */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.38);align-items:center;justify-content:center;z-index:100}
 .modal.show{display:flex}
-.panel{background:#fff;border-radius:16px;padding:18px 18px 14px;width:min(92vw,720px);box-shadow:0 24px 60px rgba(0,0,0,.25)}
-.panel h3{margin:0 0 12px;font-weight:900}
+.sheet{background:#fff;border-radius:16px;width:min(92vw,760px);box-shadow:0 24px 80px rgba(0,0,0,.3);overflow:hidden}
+.sheet-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bd);background:linear-gradient(180deg,#f8fbff,#ffffff)}
+.sheet-head .tag{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:#eaf2ff}
+.sheet-head h3{margin:0;font-size:1.2rem;font-weight:900;letter-spacing:-.01em}
+.sheet-head p{margin:2px 0 0 0;color:var(--muted);font-size:13px}
+.sheet-body{padding:16px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{display:flex;flex-direction:column;gap:6px}
-.field small{color:var(--muted)}
-.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
-@media (max-width:640px){
-  .form-grid{grid-template-columns:1fr}
-}
-
+.field label{font-weight:800}
+.hint{color:var(--muted);font-size:12px}
+.sheet-foot{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--bd);background:#fafcff}
+@media (max-width:640px){ .form-grid{grid-template-columns:1fr} }
 /* 저장중 오버레이 + 토스트 */
 .saving{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:120}
 .saving.hidden{display:none}
 .saving .box{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:18px 20px;font-weight:800;box-shadow:0 10px 30px rgba(0,0,0,.2)}
 .toast{position:fixed;right:16px;bottom:16px;background:rgba(0,0,0,0.85);color:#fff;padding:10px 12px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:150}
 .toast.show{opacity:1}
-
 /* 모바일 카드뷰 */
 .cards{display:none}
 .card-item{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
@@ -73,15 +77,14 @@ tbody tr:hover{background:#f9fbff}
 .card-sub{color:#64748b;font-size:12px}
 .card-mid{margin:6px 0 10px;font-size:15px}
 .card-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.card-actions .select{min-width:110px;padding:8px 10px}
-.card-actions .btn{padding:8px 10px}
-
+.card-actions .select{min-width:110px}
+.card-actions .btn{height:var(--ctl-h);padding:0 10px}
 /* 아이콘 버튼 */
 .icon-btn{
-  appearance:none; border:0; cursor:pointer;
+  appearance:none; border:1px solid var(--bd); cursor:pointer; background:#fff;
   display:inline-flex; align-items:center; justify-content:center;
-  width:36px; height:36px; border-radius:10px;
-  background:#fff; border:1px solid var(--bd); box-shadow:0 2px 6px rgba(0,0,0,.06);
+  width:var(--ctl-h); height:var(--ctl-h); border-radius:var(--radius);
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
 }
 .icon-btn.primary{ background:var(--accent); border-color:var(--accent); }
 .icon-btn.primary svg{ stroke:#fff; }
@@ -91,14 +94,13 @@ tbody tr:hover{background:#f9fbff}
 .icon-btn:hover{ transform:translateY(-1px); }
 .icon-btn svg{ width:18px; height:18px; stroke:#334155; stroke-width:2; fill:none; }
 .icon-btn .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-
-/* 모바일에서 더 타이트하게 + 한 줄 유지 */
+/* 모바일에서 더 타이트 + 한 줄 유지 */
 @media (max-width:640px){
   .card table{display:none}
   .cards{display:grid;gap:10px}
   .card-actions{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; gap:6px; }
-  .card-actions .select{ min-width:92px; padding:6px 8px; font-size:14px; }
-  .card-actions .icon-btn{ width:34px; height:34px; }
+  .card-actions .select{ min-width:92px; padding:0 8px; font-size:14px; height:var(--ctl-h); }
+  .card-actions .icon-btn{ width:var(--ctl-h); height:var(--ctl-h); }
   .card-actions .badge{ white-space:nowrap; font-size:12px; padding:3px 8px; }
 }
 </style>
@@ -119,7 +121,7 @@ tbody tr:hover{background:#f9fbff}
 
     <div class="card" role="region" aria-label="요청 현황 표">
       <table id="tbl">
-        <!-- 열 너비 지정: 요청자 좁게, 요청물품 넓게 -->
+        <!-- 열 너비: 요청자 좁게, 요청물품 넓게 -->
         <colgroup>
           <!-- 요청일 / 요청자 / 요청물품 / 개수 / 진행상태 / 빠른변경 / 수정 / 삭제 -->
           <col style="width:12%">
@@ -159,45 +161,63 @@ tbody tr:hover{background:#f9fbff}
     </div>
   </main>
 
-  <!-- 추가/수정 모달 -->
+  <!-- 추가/수정 모달 (세련된 시트 레이아웃) -->
   <div class="modal" id="modal" aria-modal="true" role="dialog" aria-labelledby="modalTitle">
-    <div class="panel">
-      <h3 id="modalTitle">요청 추가</h3>
-      <form id="postForm" method="POST" target="hidden_iframe">
-        <input type="hidden" name="op" value="add" />
-        <input type="hidden" name="id" value="" />
-        <div class="form-grid">
-          <div class="field">
-            <label for="f_date">요청일</label>
-            <input id="f_date" type="date" name="date" required />
-            <small>YYYY-MM-DD 형식</small>
-          </div>
-          <div class="field">
-            <label for="f_who">요청자</label>
-            <input id="f_who" type="text" name="who" placeholder="요청자" required />
-          </div>
-          <div class="field">
-            <label for="f_item">요청물품</label>
-            <input id="f_item" type="text" name="item" placeholder="요청물품" required />
-          </div>
-          <div class="field">
-            <label for="f_qty">개수</label>
-            <input id="f_qty" type="number" name="qty" min="1" step="1" required />
-          </div>
-          <div class="field">
-            <label for="f_status">진행상태</label>
-            <select id="f_status" name="status" required>
-              <option>요청</option>
-              <option>진행중</option>
-              <option>완료</option>
-            </select>
-          </div>
+    <div class="sheet">
+      <div class="sheet-head">
+        <div class="tag" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" style="stroke:#2563eb;fill:none;stroke-width:2;display:block;margin:auto">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
         </div>
-        <div class="actions">
-          <button type="button" class="btn ghost" id="btnCancel" title="창 닫기">취소</button>
-          <button type="submit" class="btn primary" id="btnSubmit" title="저장하기">저장</button>
+        <div>
+          <h3 id="modalTitle">요청 추가</h3>
+          <p id="modalDesc">필요한 정보를 입력하고 저장하세요.</p>
         </div>
-      </form>
+        <button type="button" class="icon-btn ghost" id="btnX" aria-label="창 닫기" title="창 닫기" style="margin-left:auto">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6l-12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="sheet-body">
+        <form id="postForm" method="POST" target="hidden_iframe">
+          <input type="hidden" name="op" value="add" />
+          <input type="hidden" name="id" value="" />
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="f_date">요청일</label>
+              <input id="f_date" class="input" type="date" name="date" required />
+              <div class="hint">YYYY-MM-DD 형식</div>
+            </div>
+            <div class="field">
+              <label for="f_who">요청자</label>
+              <input id="f_who" class="input" type="text" name="who" placeholder="요청자" required />
+            </div>
+            <div class="field">
+              <label for="f_item">요청물품</label>
+              <input id="f_item" class="input" type="text" name="item" placeholder="요청물품" required />
+            </div>
+            <div class="field">
+              <label for="f_qty">개수</label>
+              <input id="f_qty" class="input" type="number" name="qty" min="1" step="1" required />
+            </div>
+            <div class="field">
+              <label for="f_status">진행상태</label>
+              <select id="f_status" class="select" name="status" required title="상태 선택" aria-label="상태 선택">
+                <option>요청</option>
+                <option>진행중</option>
+                <option>완료</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="sheet-foot">
+            <button type="button" class="btn ghost" id="btnCancel" title="창 닫기">취소</button>
+            <button type="submit" class="btn primary" id="btnSubmit" title="저장하기">저장</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -322,15 +342,17 @@ function applyAndRender(){
         <td>${r.개수 ?? ""}</td>
         <td>${badge(r.진행사항)}</td>
         <td>
-          <select class="select" data-quick="${r.ID ?? ""}" title="상태 선택" aria-label="상태 선택">
-            <option ${r.진행사항==='요청'?'selected':''}>요청</option>
-            <option ${r.진행사항==='진행중'?'selected':''}>진행중</option>
-            <option ${r.진행사항==='완료'?'selected':''}>완료</option>
-          </select>
-          <button class="icon-btn ghost" aria-label="상태 변경" title="선택한 상태로 변경" data-save="${r.ID ?? ""}">
-            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            <span class="sr-only">변경</span>
-          </button>
+          <span class="quick-wrap">
+            <select class="select" data-quick="${r.ID ?? ""}" title="상태 선택" aria-label="상태 선택">
+              <option ${r.진행사항==='요청'?'selected':''}>요청</option>
+              <option ${r.진행사항==='진행중'?'selected':''}>진행중</option>
+              <option ${r.진행사항==='완료'?'selected':''}>완료</option>
+            </select>
+            <button class="icon-btn ghost" aria-label="상태 변경" title="선택한 상태로 변경" data-save="${r.ID ?? ""}">
+              <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              <span class="sr-only">변경</span>
+            </button>
+          </span>
         </td>
         <td>
           <button class="icon-btn" aria-label="수정" title="내용 수정" data-edit="${r.ID ?? ""}">
@@ -422,6 +444,7 @@ function applyAndRender(){
 
   // 테이블 이벤트
   if (slice.length){
+    const tbody = $("#tbody");
     tbody.querySelectorAll("[data-save]").forEach(btn=>{
       btn.onclick = ()=>{
         const id = btn.getAttribute("data-save");
@@ -455,12 +478,14 @@ const saving = $("#savingPopup");
 
 $("#btnOpenAdd").onclick = ()=> openModal("add");
 $("#btnCancel").onclick  = ()=> modal.classList.remove("show");
+$("#btnX").onclick       = ()=> modal.classList.remove("show");
 
 function openModal(mode, row){
   modal.classList.add("show");
   form.action = APPS_SCRIPT_EXEC;
   if (mode === "add"){
     $("#modalTitle").textContent = "요청 추가";
+    $("#modalDesc").textContent  = "필요한 정보를 입력하고 저장하세요.";
     form.op.value = "add";
     form.id.value = "";
     form.date.value = "";
@@ -470,6 +495,7 @@ function openModal(mode, row){
     form.status.value = "요청";
   } else {
     $("#modalTitle").textContent = "요청 수정";
+    $("#modalDesc").textContent  = "내용을 수정한 뒤 저장하세요.";
     form.op.value = "update";
     form.id.value = row.ID ?? "";
     form.date.value = row.요청일 ?? "";
