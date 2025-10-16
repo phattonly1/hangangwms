@@ -196,7 +196,14 @@
   </div>
 
   <!-- 숨은 iframe: 폼 POST 응답 수신 -->
-  <iframe name="hidden_iframe" style="display:none"></iframe>
+  <iframe name="hidden_iframe" id="hidden_iframe" style="display:none"></iframe>
+
+  <!-- 숨은 액션 폼(재사용) : 빠른변경/삭제용 -->
+  <form id="actionForm" method="POST" target="hidden_iframe" style="display:none">
+    <input type="hidden" name="op" />
+    <input type="hidden" name="id" />
+    <input type="hidden" name="status" />
+  </form>
 
   <!-- 저장 중 팝업 -->
   <div id="savingPopup" class="saving hidden" aria-live="polite">
@@ -218,7 +225,7 @@
     let sortKey = "ID", sortDir = "desc";
     let isSubmitting = false;
     const $ = s => document.querySelector(s);
-    const toast = (t)=>{ const el=$('#toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 1400); };
+    const toast = (t)=>{ const el=$('#toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 1600); };
     const normDate = (v)=>{ if(!v) return ''; if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v; return String(v).replace(/[.\s]/g,'-').replace(/-$/,'').replace(/--/g,'-'); };
     const toNum = v => (v===''||v==null||isNaN(Number(v))) ? 0 : Number(v);
     const sel = (cur, val)=> (String(cur||'').trim()===val ? 'selected' : '');
@@ -455,6 +462,7 @@
 
     /* === 모달/폼 & 저장 중 팝업 === */
     const modalEl = $('#modal'); const form = $('#postForm');
+    const hiddenIframe = document.getElementById('hidden_iframe');
     const savingEl = $('#savingPopup'); const btnSubmit = $('#btnSubmit');
 
     function openModal(mode, row) {
@@ -482,36 +490,50 @@
       savingEl.classList.remove('hidden');
     });
 
-    // 폼 응답 수신
-    document.querySelector('iframe[name="hidden_iframe"]').addEventListener('load', () => {
+    // 숨은 iframe 응답 판독 (OK/ERROR:)
+    hiddenIframe.addEventListener('load', () => {
+      let text = '';
+      try {
+        const doc = hiddenIframe.contentDocument || hiddenIframe.contentWindow.document;
+        text = (doc && doc.body) ? (doc.body.textContent || doc.body.innerText || '') : '';
+      } catch (e) { /* cross-origin 안전가드 */ }
+
+      // 공통 해제
       isSubmitting = false;
       btnSubmit.disabled = false;
       btnSubmit.textContent = '저장';
       form.querySelectorAll('input, select, button').forEach(el => el.disabled = false);
       savingEl.classList.add('hidden');
 
+      if (text && text.startsWith('ERROR:')) {
+        toast('실패: ' + text.replace('ERROR:','').trim());
+        return; // 실패면 모달 유지 (수정 가능)
+      }
+
+      // 성공 처리
       closeModal();
       toast('처리되었습니다');
       load();
     });
 
-    // 빠른 상태 변경
+    // 빠른 상태 변경 / 삭제: 숨은 액션 폼 재사용
+    const actionForm = document.getElementById('actionForm');
+    actionForm.action = APPS_SCRIPT_EXEC;
+
+    function submitAction(op, id, status){
+      actionForm.op.value = op;
+      actionForm.id.value = id;
+      actionForm.status.value = status || '';
+      actionForm.submit();
+    }
+
     function quickUpdate(id, status){
-      const f = document.createElement('form'); f.method='POST'; f.action=APPS_SCRIPT_EXEC; f.target='hidden_iframe';
-      [['op','update'],['id',id],['status',status]].forEach(([k,v])=>{
-        const i=document.createElement('input'); i.type='hidden'; i.name=k; i.value=v; f.appendChild(i);
-      });
-      document.body.appendChild(f); f.submit(); f.remove();
+      submitAction('update', id, status);
       toast('상태 변경 중…');
     }
 
-    // 삭제
     function quickDelete(id){
-      const f = document.createElement('form'); f.method='POST'; f.action=APPS_SCRIPT_EXEC; f.target='hidden_iframe';
-      [['op','delete'],['id',id]].forEach(([k,v])=>{
-        const i=document.createElement('input'); i.type='hidden'; i.name=k; i.value=v; f.appendChild(i);
-      });
-      document.body.appendChild(f); f.submit(); f.remove();
+      submitAction('delete', id);
       toast('삭제 중…');
     }
 
