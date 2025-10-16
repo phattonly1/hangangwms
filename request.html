@@ -10,8 +10,6 @@
   *{ box-sizing:border-box }
   html, body { height:100%; margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Pretendard,Arial; }
   body { background:#f5f7fb; color:#0b2239; }
-
-  /* 상단 헤더: 로고 + 제목 한 줄 */
   .appbar{
     height:var(--HDR-H); display:flex; align-items:center; gap:14px;
     padding:0 16px; background:#fff; border-bottom:1px solid rgba(0,0,0,.06);
@@ -24,8 +22,6 @@
     font-size: clamp(18px, 4.2vw, 26px);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-
-  /* 본문: iframe이 안전한 뷰포트 높이로 화면 채우기 */
   .frame-wrap{ height:calc(100svh - var(--HDR-H)); min-height:400px; }
   iframe{ width:100%; height:100%; border:0; background:#fff; }
   @media (max-width:420px){
@@ -35,16 +31,14 @@
 </style>
 </head>
 <body>
-  <!-- 헤더 -->
   <header class="appbar">
     <img class="logo-img" src="./assets/gongdan-mark.png" alt="공단 마크" />
     <div class="title-text"><h1>요청 현황</h1></div>
   </header>
 
-  <!-- 요청 현황 웹앱 임베드 -->
   <main class="frame-wrap">
     <iframe
-      src="https://script.google.com/macros/s/AKfycbw7AcLyklfrgTl2MJeN4NKGHJvruegRzxsS2xBtlByhEN_d8e1wvSK83Q2OQnJNWFL1Ag/exec"
+      src="https://script.google.com/macros/s/AKfycbxuKqqMsp89thRETUhx5BKt-KNuU7ZqhQTyBBU0VDMO7sPKD_Ozid2GxLnfRNJTGBeSzA/exec"
       allow="clipboard-read; clipboard-write"
       referrerpolicy="no-referrer-when-downgrade"
     ></iframe>
