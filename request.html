@@ -5,49 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>요청 현황</title>
 <style>
-:root{--ink:#0b2239;--muted:#64748b;--bd:#e5e7eb;--panel:#fff;--accent:#2563eb;--ok:#065f46;--warn:#9a3412;--mid:#3730a3;--ctl-h:38px;--radius:10px}
+:root{--ink:#0b2239;--muted:#64748b;--bd:#e5e7eb;--panel:#fff;--accent:#2563eb;--ok:#065f46;--warn:#9a3412;--mid:#3730a3;--ctl-h:44px;--radius:12px}
 *{box-sizing:border-box} html,body{margin:0;padding:0;font-family:ui-sans-serif,system-ui,Apple SD Gothic Neo,Pretendard; color:var(--ink); background:#f5f7fb}
 .appbar{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid #e6e8ee;position:sticky;top:0;z-index:10}
 .appbar h1{margin:0;font-size:1.2rem;font-weight:800}
 .wrap{max-width:1200px;margin:0 auto;padding:16px}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
-.btn{appearance:none;border:1px solid var(--bd);border-radius:10px;padding:0 12px;background:#fff;font-weight:800;cursor:pointer;height:var(--ctl-h);display:inline-flex;align-items:center}
+.btn{appearance:none;border:1px solid var(--bd);border-radius:12px;padding:0 12px;background:#fff;font-weight:800;cursor:pointer;height:var(--ctl-h);display:inline-flex;align-items:center;justify-content:center}
 .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .btn.danger{background:#dc2626;color:#fff;border-color:#dc2626}
-.select,.input,textarea{border:1px solid var(--bd);border-radius:10px;background:#fff}
-.select,.input{height:var(--ctl-h);padding:0 10px}
-.input.search{width:280px;max-width:100%}
+.select,.input,textarea{border:1px solid var(--bd);border-radius:12px;background:#fff}
+.select,.input{height:var(--ctl-h);padding:0 12px}
+.input.search{width:320px;max-width:100%}
 .chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--bd);background:#fff;font-weight:800;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--bd);background:#fff;font-weight:800;font-size:13px}
 .chip .dot{width:8px;height:8px;border-radius:50%}
 .chip.req .dot{background:#fb923c}.chip.prog .dot{background:#6366f1}.chip.done .dot{background:#10b981}
-.card{background:#fff;border:1px solid var(--bd);border-radius:14px;overflow:auto}
+.card{background:#fff;border:1px solid var(--bd);border-radius:16px;overflow:auto}
 table{width:100%;border-collapse:collapse}
 th,td{padding:12px;border-bottom:1px solid var(--bd);vertical-align:middle}
 th{background:#f1f5ff;color:#1e3a8a;font-weight:800;position:sticky;top:0;z-index:1;text-align:center}
 td{text-align:center}
 .cell-item{white-space:normal;word-break:keep-all;line-height:1.4;text-align:left}
-.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700}
 .badge.done{background:#ecfdf5;color:#065f46}
 .badge.req{background:#fff7ed;color:#9a3412}
 .badge.prog{background:#eef2ff;color:#3730a3}
 .pagination{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:12px 0}
-.page-btn{padding:0 12px;border:1px solid var(--bd);border-radius:10px;background:#fff;cursor:pointer;height:var(--ctl-h);display:inline-flex;align-items:center}
+.page-btn{padding:0 12px;border:1px solid var(--bd);border-radius:12px;background:#fff;cursor:pointer;height:var(--ctl-h);display:inline-flex;align-items:center}
 .toast{position:fixed;right:16px;bottom:16px;background:rgba(0,0,0,.85);color:#fff;padding:10px 12px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:150}
 .toast.show{opacity:1}
 .muted{color:#64748b}
 
-/* 아바타: 2배(88x88) */
+/* 이미지: 2배(88x88) */
 .avatar{width:88px;height:88px;border-radius:12px;object-fit:cover;background:#eef2f7;border:1px solid var(--bd);cursor:pointer}
 
 /* 작업 액션 */
-.actions{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.icon-btn{appearance:none;border:1px solid var(--bd);background:#fff;cursor:pointer;width:34px;height:34px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center}
+.actions{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.icon-btn{appearance:none;border:1px solid var(--bd);background:#fff;cursor:pointer;width:44px;height:44px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center}
 .icon-btn.danger{background:#dc2626;border-color:#dc2626}.icon-btn.danger svg{stroke:#fff}
-.icon-btn svg{width:18px;height:18px;stroke:#334155;stroke-width:2;fill:none}
-.actions .select{height:34px;padding:0 8px}
+.icon-btn svg{width:20px;height:20px;stroke:#334155;stroke-width:2;fill:none}
+.actions .select{height:44px;padding:0 10px}
 
-/* 모달들: hidden 으로 제어 */
+/* 모달들 */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal[hidden]{display:none!important}
 .sheet{background:#fff;border-radius:16px;width:min(92vw,760px);box-shadow:0 24px 80px rgba(0,0,0,.3);overflow:hidden}
@@ -56,11 +56,29 @@ td{text-align:center}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{display:flex;flex-direction:column;gap:6px}
 .sheet-foot{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--bd);background:#fafcff}
-/* 작은 모달 */
 .sheet.small{width:min(92vw,420px)}
-
-/* 이미지 라이트박스 */
 .lb-img{max-width:min(92vw,900px);max-height:80vh;border-radius:12px;border:1px solid var(--bd);background:#fff}
+
+/* ===== 모바일 최적화 ===== */
+.cards{display:none}
+@media (max-width: 720px){
+  .input.search{flex:1 1 100%}
+  table{display:none}
+  .cards{display:grid; gap:10px}
+  .card-item{background:#fff;border:1px solid var(--bd);border-radius:16px;padding:12px}
+  .ci-top{display:flex;align-items:center;gap:10px}
+  .ci-title{flex:1 1 auto; min-width:0}
+  .ci-title .name{font-weight:900}
+  .ci-title .sub{color:#64748b; font-size:13px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .ci-badges{margin-top:6px}
+  .ci-meta{display:flex; gap:12px; color:#475569; font-size:14px; margin:8px 0}
+  .ci-actions{display:flex; gap:8px; align-items:center; overflow-x:auto; -webkit-overflow-scrolling:touch}
+  .ci-actions .select{min-width:120px}
+  /* FAB */
+  .fab{position:fixed; right:16px; bottom:16px; z-index:120; border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+}
+.fab{display:none}
+@media (max-width: 720px){ .fab{display:inline-flex} }
 </style>
 </head>
 <body>
@@ -76,7 +94,6 @@ td{text-align:center}
       <button class="btn" id="btnReload">새로고침</button>
       <button class="btn" id="btnCSV">CSV 내보내기</button>
       <button class="btn primary" id="btnOpenAdd" style="margin-left:auto">리스트 추가</button>
-      <!-- ❓ 도움말 아이콘 -->
       <button class="icon-btn" id="btnHelp" aria-label="도움말" title="도움말 열기">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 18v-2m0-2a3 3 0 10-3-3"/><circle cx="12" cy="12" r="9"/></svg>
       </button>
@@ -92,25 +109,17 @@ td{text-align:center}
     <div class="card" role="region" aria-label="요청 현황 표">
       <table>
         <colgroup>
-          <col style="width:104px"><!-- 88 + padding -->
-          <col style="width:34%">
-          <col style="width:20%">
-          <col style="width:12%">
-          <col style="width:14%">
-          <col style="width:20%">
+          <col style="width:104px"><col style="width:34%"><col style="width:20%"><col style="width:12%"><col style="width:14%"><col style="width:20%">
         </colgroup>
         <thead>
           <tr>
-            <th>사진</th>
-            <th data-k="물품명">물품명</th>
-            <th data-k="기기">기기</th>
-            <th data-k="재고량">재고량</th>
-            <th data-k="요청상태">요청상태</th>
-            <th>작업</th>
+            <th>사진</th><th data-k="물품명">물품명</th><th data-k="기기">기기</th><th data-k="재고량">재고량</th><th data-k="요청상태">요청상태</th><th>작업</th>
           </tr>
         </thead>
         <tbody id="tbody"><tr><td colspan="6">불러오는 중…</td></tr></tbody>
       </table>
+      <!-- 모바일 카드 컨테이너 -->
+      <div id="cards" class="cards" aria-live="polite"></div>
     </div>
 
     <div class="pagination">
@@ -121,12 +130,14 @@ td{text-align:center}
     </div>
   </main>
 
+  <!-- FAB(모바일 전용) -->
+  <button class="btn primary fab" id="btnOpenAddFab">+ 리스트 추가</button>
+
   <!-- 큰 모달: 추가/수정 -->
   <div class="modal" id="modal" aria-modal="true" hidden>
     <div class="sheet">
       <div class="sheet-head"><h3 id="modalTitle" style="margin:0">리스트 추가</h3></div>
       <div class="sheet-body">
-        <!-- 사진 미리보기 + 사진 열기/변경 -->
         <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px">
           <img id="modalPreview" src="" alt="미리보기" style="width:120px;height:120px;border-radius:14px;object-fit:cover;border:1px solid var(--bd);cursor:pointer" />
           <div class="actions">
@@ -186,39 +197,28 @@ td{text-align:center}
   <!-- 도움말 모달 -->
   <div class="modal" id="helpModal" aria-modal="true" hidden>
     <div class="sheet small" role="dialog" aria-labelledby="helpTitle">
-      <div class="sheet-head">
-        <h3 id="helpTitle" style="margin:0">사용법 안내</h3>
-      </div>
+      <div class="sheet-head"><h3 id="helpTitle" style="margin:0">사용법 안내</h3></div>
       <div class="sheet-body" style="font-size:14px; line-height:1.6">
         <ol style="margin:0; padding-left:18px">
-          <li style="margin-bottom:8px">
-            <b>리스트 추가</b>
+          <li style="margin-bottom:8px"><b>리스트 추가</b>
             <ol style="margin:6px 0 0 0; padding-left:18px">
               <li>우측 상단 <b>‘리스트 추가’</b> 버튼을 누릅니다.</li>
-              <li><b>물품명, 기기, 재고량</b>을 입력하고 <b>저장</b>합니다.<br>
-                  <span style="color:#64748b">요청자·개수는 비워도 저장됩니다(나중에 입력 가능).</span></li>
+              <li><b>물품명, 기기, 재고량</b>을 입력하고 <b>저장</b>합니다.<br><span style="color:#64748b">요청자·개수는 비워도 저장됩니다(나중에 입력 가능).</span></li>
             </ol>
           </li>
-
-          <li style="margin-bottom:8px">
-            <b>요청 입력/변경</b>
+          <li style="margin-bottom:8px"><b>요청 입력/변경</b>
             <ol style="margin:6px 0 0 0; padding-left:18px">
               <li>목록의 <b>요청상태</b> 드롭다운에서 <b>‘요청’</b>을 선택하면 팝업이 뜹니다.</li>
-              <li><b>요청자</b>와 <b>개수</b>를 입력하면 <code>홍길동(2)</code> 형식으로 저장되고,<br>
-                  배지에 <b>요청(홍길동)</b>처럼 표시됩니다.</li>
+              <li><b>요청자</b>와 <b>개수</b>를 입력하면 <code>홍길동(2)</code> 형식으로 저장되고, 배지에 <b>요청(홍길동)</b>처럼 표시됩니다.</li>
             </ol>
           </li>
-
-          <li style="margin-bottom:8px">
-            <b>추가요청(여러 명 누적)</b>
+          <li style="margin-bottom:8px"><b>추가요청(여러 명 누적)</b>
             <ol style="margin:6px 0 0 0; padding-left:18px">
               <li>작업 영역의 <b>➕ 아이콘(추가요청)</b>을 누릅니다.</li>
               <li>새 <b>요청자·개수</b>를 입력하면 기존 뒤에 이어 붙고, <b>개수는 합산</b>됩니다.</li>
             </ol>
           </li>
-
-          <li style="margin-bottom:0">
-            <b>사진 보기/변경</b>
+          <li style="margin-bottom:0"><b>사진 보기/변경</b>
             <ol style="margin:6px 0 0 0; padding-left:18px">
               <li>썸네일(88×88)을 클릭하면 <b>확대</b>해서 볼 수 있습니다.</li>
               <li><b>수정</b>을 누르면 모달 상단에서 <b>사진 열기/변경</b>이 가능합니다.</li>
@@ -226,9 +226,7 @@ td{text-align:center}
           </li>
         </ol>
       </div>
-      <div class="sheet-foot">
-        <button class="btn" id="btnHelpClose">닫기</button>
-      </div>
+      <div class="sheet-foot"><button class="btn" id="btnHelpClose">닫기</button></div>
     </div>
   </div>
 
@@ -238,8 +236,7 @@ td{text-align:center}
 <script>
 /* ===== 설정 ===== */
 const APPS_SCRIPT_EXEC = "https://script.google.com/macros/s/AKfycbzookadn2uRywLFtWdy03vCzLQDI3slaMU3ceR-7cozgkMb-bify9-XC6Uw0XEKNFYi/exec";
-/* 깃허브 에셋(사진) */
-const IMG_BASE = "https://raw.githubusercontent.com/your-org/your-repo/main/assets/requests/"; // ← 경로 수정
+const IMG_BASE = "https://raw.githubusercontent.com/your-org/your-repo/main/assets/requests/"; // 수정
 const IMG_EXT  = ".jpg";
 
 /* ===== 상태/UI 저장 ===== */
@@ -248,7 +245,7 @@ let q="", fStatus="", fDevice="";
 const $=s=>document.querySelector(s);
 const $$=(s,el=document)=>Array.from((el||document).querySelectorAll(s));
 const toast=t=>{const el=$('#toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1200);};
-const KEY='request.ui.v7';
+const KEY='request.ui.v8';
 function saveUI(){ localStorage.setItem(KEY, JSON.stringify({q,fStatus,fDevice,sortKey,sortDir,pageSize})); }
 function loadUI(){ try{ const s=JSON.parse(localStorage.getItem(KEY)||"{}"); q=s.q||""; fStatus=s.fStatus||""; fDevice=s.fDevice||""; sortKey=s.sortKey||"물품명"; sortDir=s.sortDir||"asc"; pageSize=+s.pageSize||20; }catch{} }
 
@@ -263,7 +260,7 @@ function parseWhoList(whoStr){
   const out=[]; const s=String(whoStr||'').trim();
   if(!s) return out;
   s.split(',').map(x=>x.trim()).filter(Boolean).forEach(tok=>{
-    const m = tok.match(/^(.+?)\s*\(\s*(\d+)\s*\)$/); // 이름(숫자)
+    const m = tok.match(/^(.+?)\s*\(\s*(\d+)\s*\)$/);
     if(m){ out.push({name:m[1].trim(), qty:parseInt(m[2],10)||0}); }
     else if(tok){ out.push({name:tok, qty:0}); }
   });
@@ -275,6 +272,7 @@ function totalQtyFromWho(whoStr){ return parseWhoList(whoStr).reduce((s,x)=>s+(p
 /* === 읽기(JSONP) === */
 function load(){
   const tbody=$('#tbody'); tbody.innerHTML='<tr><td colspan="6">불러오는 중…</td></tr>';
+  $('#cards').innerHTML='';
   const cb='render_'+Date.now();
   window[cb]=(res)=>{ delete window[cb]; if(!res?.ok){ tbody.innerHTML='<tr><td colspan="6">로드 실패(op=read 응답 오류)</td></tr>'; return; }
     allRows=Array.isArray(res.rows)?res.rows:[]; buildDeviceFilter(); applyAndRender(); };
@@ -326,10 +324,15 @@ function applyAndRender(){
   const slice=filtered.slice((page-1)*pageSize, page*pageSize);
   $('#pageinfo').textContent=`${page} / ${total}`;
 
-  const tbody=$('#tbody');
-  if(!slice.length){ tbody.innerHTML='<tr><td colspan="6">조건에 맞는 데이터가 없습니다.</td></tr>'; return; }
+  const isMobile = matchMedia('(max-width: 720px)').matches;
+  if (!slice.length){
+    $('#tbody').innerHTML='<tr><td colspan="6">조건에 맞는 데이터가 없습니다.</td></tr>';
+    $('#cards').innerHTML='<div class="muted" style="padding:12px">데이터가 없습니다.</div>';
+    return;
+  }
 
-  tbody.innerHTML = slice.map(r=>{
+  // 데스크톱 표
+  $('#tbody').innerHTML = slice.map(r=>{
     const url = imgUrlForRow(r);
     return `
       <tr data-id="${r.ID??''}">
@@ -345,7 +348,6 @@ function applyAndRender(){
               <option ${r.요청상태==='진행중'?'selected':''}>진행중</option>
               <option ${r.요청상태==='완료'?'selected':''}>완료</option>
             </select>
-            <!-- 추가요청: 아이콘 버튼 -->
             <button class="icon-btn" data-addreq="${r.ID??''}" aria-label="추가요청" title="추가요청">
               <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/><circle cx="19" cy="5" r="3"/></svg>
             </button>
@@ -361,46 +363,69 @@ function applyAndRender(){
     `;
   }).join('');
 
-  // 이미지 확대(라이트박스)
+  // 모바일 카드
+  const cards = document.getElementById('cards');
+  cards.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  slice.forEach(r=>{
+    const url = imgUrlForRow(r) || FALLBACK_SVG;
+    const div = document.createElement('div');
+    div.className = 'card-item';
+    div.innerHTML = `
+      <div class="ci-top">
+        <img class="avatar" src="${url}" alt="" data-zoom="${url}" onerror="this.onerror=null;this.src='${FALLBACK_SVG}'"/>
+        <div class="ci-title">
+          <div class="name">${r.물품명??''}</div>
+          <div class="sub">${r.기기??''} · 재고 ${r.재고량??''}</div>
+          <div class="ci-badges">${badgeWithReq(r.요청상태, r.요청자)}</div>
+        </div>
+      </div>
+      <div class="ci-meta">
+        <div><b>요청일</b> ${r.요청일??'-'}</div>
+        <div><b>개수</b> ${r.개수??0}</div>
+      </div>
+      <div class="ci-actions">
+        <select class="select" data-prev="${r.요청상태??''}" data-quick-m="${r.ID??''}" title="상태 선택">
+          <option ${r.요청상태==='요청'?'selected':''}>요청</option>
+          <option ${r.요청상태==='진행중'?'selected':''}>진행중</option>
+          <option ${r.요청상태==='완료'?'selected':''}>완료</option>
+        </select>
+        <button class="icon-btn" data-addreq-m="${r.ID??''}" aria-label="추가요청"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/><circle cx="19" cy="5" r="3"/></svg></button>
+        <button class="icon-btn" data-edit-m="${r.ID??''}" aria-label="수정"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5l4 4L7 21l-4 1 1-4 12.5-14.5z"/></svg></button>
+        <button class="icon-btn danger" data-del-m="${r.ID??''}" aria-label="삭제"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6v14m8-14v14M10 6l1-2h2l1 2"/></svg></button>
+      </div>
+    `;
+    // 이벤트: 이미지 확대
+    div.querySelector('img.avatar').onclick=()=>{
+      $('#imgLarge').src = url; $('#imgModal').hidden = false;
+    };
+    frag.appendChild(div);
+  });
+  cards.appendChild(frag);
+
+  // 공통 바인딩(표)
+  const tbody=$('#tbody');
   tbody.querySelectorAll('img.avatar').forEach(img=>{
-    img.onclick=()=>{
-      const src = img.getAttribute('data-zoom') || img.src;
-      if(!src) return;
-      $('#imgLarge').src = src;
-      $('#imgModal').hidden = false;
-    };
+    img.onclick=()=>{ const src=img.getAttribute('data-zoom')||img.src; $('#imgLarge').src=src; $('#imgModal').hidden=false; };
   });
-
-  // 상태 드롭박스: 변경 즉시 반영
   tbody.querySelectorAll('select[data-quick]').forEach(sel=>{
-    sel.onchange=()=>{
-      const id=sel.getAttribute('data-quick');
-      const prev=sel.getAttribute('data-prev')||'';
-      const val=sel.value;
-      if(val==='요청'){ // 요청자(개수)로 설정 (덮어쓰기)
-        openMini(id, sel, 'set');
-      }else{
-        sel.setAttribute('data-prev', val);
-        postExec([['op','update'],['id',id],['status',val]]);
-        toast('상태 변경 중…');
-      }
+    sel.onchange=()=>{ const id=sel.dataset.quick; const prev=sel.dataset.prev||''; const val=sel.value;
+      if(val==='요청'){ openMini(id, sel, 'set'); } else { sel.dataset.prev=val; postExec([['op','update'],['id',id],['status',val]]); toast('상태 변경 중…'); }
     };
   });
+  tbody.querySelectorAll('[data-addreq]').forEach(b=>b.onclick=()=> openMini(b.dataset.addreq, null, 'append'));
+  tbody.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{ const id=b.dataset.edit; const row=allRows.find(x=>String(x.ID)===String(id)); row?openModal('update',row):toast('항목을 찾을 수 없습니다.'); });
+  tbody.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ const id=b.dataset.del; if(confirm('삭제할까요?')){ postExec([['op','delete'],['id',id]]); toast('삭제 중…'); } });
 
-  // 추가요청
-  tbody.querySelectorAll('[data-addreq]').forEach(b=>b.onclick=()=>{
-    const id=b.dataset.addreq;
-    openMini(id, null, 'append');
+  // 모바일 카드 바인딩
+  cards.querySelectorAll('select[data-quick-m]').forEach(sel=>{
+    sel.onchange=()=>{ const id=sel.dataset.quickM; const prev=sel.dataset.prev||''; const val=sel.value;
+      if(val==='요청'){ openMini(id, sel, 'set'); } else { sel.dataset.prev=val; postExec([['op','update'],['id',id],['status',val]]); toast('상태 변경 중…'); }
+    };
   });
-
-  // 수정/삭제
-  tbody.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{
-    const id=b.dataset.edit; const row=allRows.find(x=>String(x.ID)===String(id));
-    row?openModal('update',row):toast('항목을 찾을 수 없습니다.');
-  });
-  tbody.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
-    const id=b.dataset.del; if(confirm('삭제할까요?')){ postExec([['op','delete'],['id',id]]); toast('삭제 중…'); }
-  });
+  cards.querySelectorAll('[data-addreq-m]').forEach(b=>b.onclick=()=> openMini(b.dataset.addreqM, null, 'append'));
+  cards.querySelectorAll('[data-edit-m]').forEach(b=>b.onclick=()=>{ const id=b.dataset.editM; const row=allRows.find(x=>String(x.ID)===String(id)); row?openModal('update',row):toast('항목을 찾을 수 없습니다.'); });
+  cards.querySelectorAll('[data-del-m]').forEach(b=>b.onclick=()=>{ const id=b.dataset.delM; if(confirm('삭제할까요?')){ postExec([['op','delete'],['id',id]]); toast('삭제 중…'); } });
 
   saveUI();
 }
@@ -421,13 +446,9 @@ $('#btnCancel').onclick=()=>closeModal();
 
 function openModal(mode,row){
   modal.hidden=false; form.action=APPS_SCRIPT_EXEC; currentEditRow = row || null;
-
-  // 프리뷰 이미지
   const url = row ? (imgUrlForRow(row) || FALLBACK_SVG) : FALLBACK_SVG;
   modalPreview.src = url;
   modalPreview.onclick = ()=>{ $('#imgLarge').src = modalPreview.src; $('#imgModal').hidden = false; };
-
-  // 버튼: 사진 열기/변경
   btnPhotoOpen.onclick = ()=>{ if(modalPreview.src) window.open(modalPreview.src, '_blank'); };
   btnPhotoChange.onclick = ()=>{
     const baseId = (row?.ID||'').toString().trim();
@@ -436,7 +457,6 @@ function openModal(mode,row){
     input = input.trim();
     const url = /^https?:\/\//i.test(input) ? input : (IMG_BASE + encodeURIComponent(input || baseId) + IMG_EXT);
     modalPreview.src = url;
-    // note에 반영(수정 모드면 즉시 반영, 추가 모드면 f_note에 반영)
     if(mode==='update' && row?.ID){
       const note = mergeImgNote(row.비고, url);
       postExec([['op','update'],['id',row.ID],['note',note]]);
@@ -454,8 +474,7 @@ function openModal(mode,row){
     form.item.value=''; form.device.value='';
     form.stock.value='0'; form.status.value='요청';
     form.who.value=''; form.date.value=todayYMD();
-    form.qty.value='0';
-    form.note.value='';
+    form.qty.value='0'; form.note.value='';
   }else{
     $('#modalTitle').textContent='요청 수정';
     form.op.value='update'; form.id.value=row.ID||'';
@@ -484,7 +503,7 @@ document.getElementById('hidden_iframe').addEventListener('load',()=>{
   closeModal(); toast('처리되었습니다'); load();
 });
 
-/* === 작은 모달(요청자/개수) — set/append 모드 지원 === */
+/* === 작은 모달(요청자/개수) — set/append 모드 === */
 const mini=$('#miniModal'); const mWho=$('#m_who'); const mQty=$('#m_qty');
 let miniId=null, miniMode='set', miniSelRef=null;
 function openMini(id, selectEl, mode){
@@ -502,12 +521,7 @@ $('#miniOK').onclick=()=>{
   if(!who){ alert('요청자를 입력하세요.'); mWho.focus(); return; }
   const row=allRows.find(x=>String(x.ID)===String(miniId));
   const prevWho = row?.요청자 || '';
-  let newWho = '';
-  if(miniMode==='append' && prevWho){
-    newWho = prevWho + ', ' + `${who}(${qty})`;
-  }else{ // set
-    newWho = `${who}(${qty})`;
-  }
+  let newWho = (miniMode==='append' && prevWho) ? (prevWho + ', ' + `${who}(${qty})`) : `${who}(${qty})`;
   const total = totalQtyFromWho(newWho);
   const pairs = [['op','update'],['id',miniId],['who',newWho],['qty', total]];
   if (miniMode==='set'){ pairs.push(['status','요청']); }
@@ -556,16 +570,10 @@ $('#fStatus').onchange=(e)=>{ fStatus=e.target.value; page=1; applyAndRender(); 
 $('#fDevice').onchange=(e)=>{ fDevice=e.target.value; page=1; applyAndRender(); };
 window.addEventListener('keydown',(e)=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); $('#q').focus(); } });
 
-/* === “리스트 추가” 버튼 안전 바인딩 === */
-function _bindAddButton(){
-  const addBtn = document.getElementById('btnOpenAdd');
-  if (addBtn) addBtn.onclick = ()=> openModal('add');
-}
-_bindAddButton();
-document.addEventListener('click', (e)=>{
-  const t = e.target.closest && e.target.closest('#btnOpenAdd');
-  if (t) { e.preventDefault(); openModal('add'); }
-});
+/* === “리스트 추가” 버튼 / FAB === */
+function _openAdd(){ openModal('add'); }
+document.getElementById('btnOpenAdd').onclick=_openAdd;
+document.getElementById('btnOpenAddFab').onclick=_openAdd;
 
 /* 초기화 */
 loadUI();
