@@ -3,68 +3,112 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>수질측정망 지도</title>
+<title>수질측정망 지도 · Safe Mode</title>
 <link rel="icon" href="./assets/gongdan-mark.png" />
-<meta name="theme-color" content="#0b2239" />
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   :root{
-    --hdr: 56px;
-    --gap: 12px;
-    --gap-lg: 16px;
-    --panel-w: min(86vw, 320px);
-    /* 안전 여백(Safari 노치, 제스처바 포함) */
-    --sa-top: env(safe-area-inset-top, 0px);
-    --sa-right: env(safe-area-inset-right, 0px);
-    --sa-bottom: env(safe-area-inset-bottom, 0px);
-    --sa-left: env(safe-area-inset-left, 0px);
+    --hdr:56px; --gap:12px;
+    --sa-t:env(safe-area-inset-top,0px);
+    --sa-r:env(safe-area-inset-right,0px);
+    --sa-b:env(safe-area-inset-bottom,0px);
+    --sa-l:env(safe-area-inset-left,0px);
   }
   *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Pretendard,Arial}
+  html,body{height:100%;margin:0;font-family:system-ui,Apple SD Gothic Neo,Pretendard,Segoe UI,Roboto,Arial}
   body{background:#0b1622;color:#e6eef6}
-
-  /* 헤더 */
   .appbar{
-    height:var(--hdr); position:sticky; top:0; z-index:1000;
-    padding:0 calc(var(--gap-lg) + var(--sa-right)) 0 calc(var(--gap-lg) + var(--sa-left));
-    display:flex; align-items:center; gap:10px;
-    background:#101b2a; border-bottom:1px solid rgba(255,255,255,.08);
+    position:sticky;top:0;z-index:10;height:var(--hdr);
+    padding:0 calc(var(--gap)+var(--sa-r)) 0 calc(var(--gap)+var(--sa-l));
+    display:flex;align-items:center;gap:10px;background:#101b2a;border-bottom:1px solid rgba(255,255,255,.08)
   }
-  .logo-img{width:36px;height:36px;object-fit:contain}
-  .title{font-weight:800;letter-spacing:-.02em;font-size:18px}
-
-  /* 지도 */
-  .map-wrap{
-    position:relative;
-    height: calc(100svh - var(--hdr));
-    height: calc(100vh - var(--hdr));
-    min-height: 420px;
-  }
+  .title{font-weight:800;letter-spacing:-.02em}
+  .wrap{position:relative;height:calc(100dvh - var(--hdr));min-height:420px}
   #map{width:100%;height:100%}
 
-  /* 필터 패널: 좌상단 고정 + 안전여백 */
-  .filter-panel{
-    position:absolute; z-index:1100;
-    left: calc(var(--gap-lg) + var(--sa-left));
-    top: calc(var(--gap-lg) + var(--sa-top));
-    width: var(--panel-w);
-    background:rgba(16,27,42,.96); color:#e6eef6;
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:14px; padding:10px 10px 12px; box-shadow:0 4px 10px rgba(0,0,0,.35);
+  /* 좌상단 패널 */
+  .panel{
+    position:absolute;z-index:1100;
+    left:calc(var(--gap)+var(--sa-l)); top:calc(var(--gap)+var(--sa-t));
+    background:rgba(16,27,42,.96);color:#e6eef6;border:1px solid rgba(255,255,255,.1);
+    border-radius:14px;padding:8px 10px;display:flex;align-items:center;gap:8px
   }
-  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
-  .panel-title{margin:0;font-size:13px;color:#9fb6cd}
-  .panel-toggle{
-    border:none;background:transparent;color:#e6eef6;cursor:pointer;
-    width:34px;height:34px;border-radius:10px;display:grid;place-items:center
+  .panel button{
+    width:36px;height:36px;border:none;border-radius:10px;background:transparent;color:#e6eef6;display:grid;place-items:center;cursor:pointer
   }
-  .panel-toggle:focus-visible{outline:2px solid #7aa7ff;outline-offset:2px}
-  .panel-body{display:flex;flex-direction:column;gap:6px;margin-top:6px}
-  label{display:flex;align-items:center;gap:6px;font-size:14px}
-  .jump{font-weight:700;color:#9f
+
+  /* 우상단 줌 버튼 */
+  .leaflet-top.leaflet-right{
+    top:calc(var(--gap)+var(--sa-t));
+    right:calc(var(--gap)+var(--sa-r));
+  }
+  /* 우하단 레이어(지금은 숨김) 위치 예약 */
+  .leaflet-bottom.leaflet-right{
+    right:calc(var(--gap)+var(--sa-r));
+    bottom:calc(88px + var(--sa-b));
+  }
+
+  /* GPS 버튼 우하단 */
+  .gps{
+    position:absolute;z-index:1200;
+    right:calc(var(--gap)+var(--sa-r));
+    bottom:calc(20px + var(--sa-b));
+    width:54px;height:54px;border:none;border-radius:999px;background:#00b894;color:#fff;font-size:24px;display:grid;place-items:center;box-shadow:0 6px 14px rgba(0,0,0,.35);cursor:pointer
+  }
+
+  /* 토스트(아이콘 위) */
+  .toast{
+    position:absolute;z-index:1200;
+    right:calc(var(--gap)+var(--sa-r)); bottom:calc(90px + var(--sa-b));
+    background:rgba(0,0,0,.88);color:#fff;border-radius:10px;padding:10px 12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s
+  }
+  .toast.show{opacity:1}
+
+  /* 에러 오버레이 */
+  .err{
+    position:fixed;inset:calc(8px + var(--sa-t)) calc(8px + var(--sa-r)) auto calc(8px + var(--sa-l));
+    z-index:2000;background:#2b1d1d;color:#ffd7d7;border:1px solid #ff6b6b;border-radius:10px;padding:8px 10px;font-size:12px
+  }
+</style>
+</head>
+<body>
+<header class="appbar"><div class="title">수질측정망 지도</div></header>
+
+<main class="wrap">
+  <!-- 좌상단 임시 패널(동작만 확인) -->
+  <div class="panel" id="panel">
+    <button aria-label="필터">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" d="M4 6h10M18 6h2M10 6v12M4 12h6M18 12h2M6 12v6M4 18h14M20 18h0M14 18v-8"/></svg>
+    </button>
+    <span style="font-size:13px;color:#9fb6cd">아이콘 세이프존 확인용</span>
+  </div>
+
+  <div id="map" role="region" aria-label="지도"></div>
+
+  <button class="gps" id="gpsBtn" aria-label="내 위치">📍</button>
+  <div class="toast" id="toast">알림</div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // 페이지 전역 에러를 화면에 보여주기(하얗게 보이는 상황 디버그)
+  window.addEventListener('error', e=>{
+    const box=document.createElement('div'); box.className='err';
+    box.textContent='JS Error: ' + (e.message||e.error||'unknown');
+    document.body.appendChild(box);
+  });
+
+  // 1) 지도만 먼저
+  const map = L.map('map', { zoomControl:false, preferCanvas:true });
+  L.control.zoom({position:'topright'}).addTo(map);
+  const base = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(map);
+  map.setView([37.5665,126.9780], 12);
+
+  // 2) 아이콘 안전 위치 동작 확인(토스트/버튼)
+  const toast = (m)=>{ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1400); };
+  document.getElementById('gpsBtn').addEventListener('click', ()=>{
+    toast('📡 데모: GPS 버튼 클릭됨');
+  });
+
+  // 3) 리사이즈 시 크기 보정(모바일 주소창 변화 대응)
+  addEventListener('resize', ()=> map.invalidateSize(
