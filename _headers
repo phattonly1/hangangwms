@@ -1,28 +1,4 @@
-# ─────────────────────────────────────────────
-# 1) 지도 페이지 보호 + 색인/캐시 금지
-# ─────────────────────────────────────────────
 /map.html
-  Basic-Auth: admin:1234
-  X-Robots-Tag: noindex, nofollow, noarchive
-  Cache-Control: no-store
-  X-Frame-Options: DENY
-  Referrer-Policy: no-referrer
-
-# ─────────────────────────────────────────────
-# 2) 민감 데이터(예: markers.json, GeoJSON, 썸네일) 보호
-#    data/ 폴더를 저장소 루트에 만들고 파일들을 여기에 두세요.
-# ─────────────────────────────────────────────
+  Basic-Auth: user:pass
 /data/*
-  Basic-Auth: admin:1234
-  X-Robots-Tag: noindex, nofollow, noarchive
-  Cache-Control: no-store
-  Referrer-Policy: no-referrer
-
-# ─────────────────────────────────────────────
-# 3) (선택) 전체 공통 보안 헤더
-#    - MIME 스니핑 방지
-#    - 불필요한 하드웨어 권한 차단
-# ─────────────────────────────────────────────
-/*
-  X-Content-Type-Options: nosniff
-  Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Basic-Auth: user:pass
