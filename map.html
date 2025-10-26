@@ -45,28 +45,61 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  /* 지도 영역 (svh 폴백 포함) */
+  /* 지도 영역 */
   .map-wrap{
     position:relative;
     height: calc(100svh - var(--HDR-H));
-    height: calc(100vh - var(--HDR-H)); /* 폴백 */
+    height: calc(100vh - var(--HDR-H));
     min-height: 400px;
   }
-  #map{ width:100%; height:100%; min-height:300px; } /* 안전장치 */
+  #map{ width:100%; height:100%; min-height:300px; }
 
-  /* UI 패널/버튼 */
+  /* 필터 패널 (모바일 접힘 지원) */
   .filter-panel{
     position:absolute; left:10px; top:10px; z-index:1000;
-    background:rgba(255,255,255,0.96); padding:8px 10px; border-radius:10px;
+    background:rgba(255,255,255,0.96); padding:8px 10px; border-radius:12px;
     box-shadow:0 2px 8px rgba(0,0,0,0.2);
     display:inline-flex; flex-direction:column; gap:6px; font-size:14px;
+    max-width: 80vw;
   }
   @media (prefers-color-scheme: dark){ .filter-panel{ background:rgba(16,27,42,.96); color:#e6eef6; box-shadow:0 2px 8px rgba(0,0,0,.5);} }
-  .filter-panel h2{
-    margin:0 0 6px; font-size:13px; font-weight:700; color:#365b7a;
-  }
+
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .filter-panel h2{ margin:0; font-size:13px; font-weight:700; color:#365b7a; }
   @media (prefers-color-scheme: dark){ .filter-panel h2{ color:#8aa7c4; } }
+
+  .panel-toggle{
+    border:none; background:transparent; padding:6px; border-radius:10px; cursor:pointer;
+    line-height:0; display:flex; align-items:center; justify-content:center;
+  }
+  .panel-toggle:focus-visible{ outline:2px solid #7aa7ff; outline-offset:2px; }
+  .panel-toggle svg{ width:20px; height:20px; }
+
+  .panel-body{ display:flex; flex-direction:column; gap:6px; margin-top:6px; }
   label{ display:flex; align-items:center; gap:6px; white-space:nowrap; cursor:pointer; }
+
+  /* 드롭다운 */
+  .jump{ margin-top:4px; font-weight:700; color:#365b7a; }
+  @media (prefers-color-scheme: dark){ .jump{ color:#8aa7c4; } }
+  #jumpList{
+    margin-top:4px;border:1px solid #d0d7e2;background:#fff;border-radius:8px;padding:6px 10px;min-width:220px
+  }
+  @media (prefers-color-scheme: dark){ #jumpList{ background:#0f1725; color:#e6eef6; border-color:#334155; } }
+
+  /* 접힘 상태 */
+  .filter-panel.collapsed{
+    padding:6px; gap:0;
+  }
+  .filter-panel.collapsed .panel-head h2{ display:none; }
+  .filter-panel.collapsed .panel-body{ display:none; }
+  .filter-panel.collapsed .panel-toggle{ padding:8px; }
+
+  /* 모바일에서 기본 접힘 + 컨트롤 크기 조정 */
+  @media (max-width:640px){
+    .filter-panel{ border-radius:14px; }
+    .filter-panel .panel-body label{ font-size:13px; }
+    #jumpList{ min-width: 180px; padding:6px 8px; font-size:13px; }
+  }
 
   .floating-btn{
     position:absolute; bottom:20px; right:20px; z-index:1200;
@@ -89,13 +122,11 @@
     font-weight:bold; font-size:14px; color:#222; text-shadow:1px 1px 2px #fff;
   }
 
-  /* 내 위치 마커(둥근 점+링) */
   .me-dot{
     width:16px; height:16px; border:3px solid #0ea5e9; background:#38bdf8; border-radius:999px;
     box-shadow:0 0 0 4px rgba(56,189,248,.25);
   }
 
-  /* Gist 가이드 영역 */
   .guide{ background:#fff; border-top:1px solid rgba(0,0,0,.06); }
   @media (prefers-color-scheme: dark){ .guide{ background:#101b2a; border-color:rgba(255,255,255,.08);} }
   .guide .inner{ max-width:1100px; margin:0 auto; padding:16px; }
@@ -125,27 +156,35 @@
 
   <!-- 지도 -->
   <main class="map-wrap">
-    <div class="filter-panel" role="region" aria-label="유형 필터">
-      <h2>표시 유형</h2>
-      <label><input type="checkbox" id="showSmall" checked> 소규모</label>
-      <label><input type="checkbox" id="showStream" checked> 하천</label>
-      <label><input type="checkbox" id="showStation" checked> 측정소</label>
+    <div class="filter-panel" id="filterPanel" role="region" aria-label="유형 필터" data-collapsible="true">
+      <div class="panel-head">
+        <h2>표시 유형</h2>
+        <button class="panel-toggle" id="panelToggle" aria-controls="panelBody" aria-expanded="true" aria-label="필터 열고 닫기">
+          <!-- sliders icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path stroke-width="2" stroke-linecap="round" d="M4 6h10M18 6h2M10 6v12M4 12h6M18 12h2M6 12v6M4 18h14M20 18h0M14 18v-8"/>
+          </svg>
+        </button>
+      </div>
+      <div class="panel-body" id="panelBody">
+        <label><input type="checkbox" id="showSmall" checked> 소규모</label>
+        <label><input type="checkbox" id="showStream" checked> 하천</label>
+        <label><input type="checkbox" id="showStation" checked> 측정소</label>
 
-      <!-- ▼ 새 드롭다운: 리스트 -->
-      <label style="margin-top:4px; font-weight:700; color:#365b7a;">리스트</label>
-      <select id="jumpList" aria-label="마커 리스트로 이동"
-        style="margin-top:4px;border:1px solid #d0d7e2;background:#fff;border-radius:8px;padding:6px 10px;min-width:220px">
-        <option value="">선택하세요…</option>
-      </select>
+        <div class="jump">리스트</div>
+        <select id="jumpList" aria-label="마커 리스트로 이동">
+          <option value="">선택하세요…</option>
+        </select>
+      </div>
     </div>
 
     <div id="map" role="region" aria-label="수질측정망 지도"></div>
 
     <button class="floating-btn gps-btn" id="gpsBtn" aria-label="내 위치 추적 전환">📍</button>
-    <div class="toast" id="toast" role="status" aria-live="polite">📡 위치 기능</div>
+    <div class="toast" id="toast" role="status" aria-live="polite">알림</div>
   </main>
 
-  <!-- Gist 가이드 (필요 시 접어서 보기) -->
+  <!-- Gist 가이드 -->
   <section class="guide" aria-labelledby="guide-title">
     <div class="inner">
       <details>
@@ -158,11 +197,9 @@
 
 <script>
 /* ===== 기본 설정 ===== */
-// 초기 중심
 const INITIAL_CENTER = [37.4106329, 127.1255116];
 const INITIAL_ZOOM   = 16;
 
-/* Gist 원본 + 미러 (CORS/네트워크 이슈 대비) */
 const GIST_INFO = { user:'phattonly1', id:'9309e6ef4dd423e20628a28512edf12b', commit:'7452906127b85ad19f156d19de04141b49885411', file:'facilities.json' };
 const DATA_URLS = [
   `https://gist.githubusercontent.com/${GIST_INFO.user}/${GIST_INFO.id}/raw/${GIST_INFO.commit}/${GIST_INFO.file}`,
@@ -221,7 +258,34 @@ const tooltipOpt = isMobile ? {permanent:false} : {permanent:true,className:'sta
 
 /* 유틸 */
 const $ = sel => document.querySelector(sel);
-const toast = (msg, ms=2200)=>{ const el=$("#toast"); el.textContent=msg; el.classList.add("show"); setTimeout(()=> el.classList.remove("show"), ms); };
+const toast = (msg, ms=1800)=>{ const el=$("#toast"); el.textContent=msg; el.classList.add("show"); setTimeout(()=> el.classList.remove("show"), ms); };
+
+/* ▼ 패널 접힘/펼침 */
+const panel = $("#filterPanel");
+const panelToggle = $("#panelToggle");
+const panelBody = $("#panelBody");
+function setCollapsed(collapsed){
+  if(!panel) return;
+  panel.classList.toggle("collapsed", collapsed);
+  panelToggle.setAttribute("aria-expanded", String(!collapsed));
+}
+function initPanelCollapsed(){
+  // 모바일/작은 화면 기본 접힘
+  const smallScreen = window.matchMedia("(max-width:640px)").matches;
+  setCollapsed(smallScreen);
+}
+panelToggle.addEventListener("click", (e)=>{
+  e.stopPropagation();
+  setCollapsed(!panel.classList.contains("collapsed"));
+});
+document.addEventListener("click", (e)=>{
+  if (!panel.contains(e.target) && window.matchMedia("(max-width:640px)").matches){
+    setCollapsed(true);
+  }
+});
+window.addEventListener("keydown", (e)=>{
+  if (e.key === "Escape") setCollapsed(true);
+});
 
 /* ▼ 드롭다운 */
 const jumpEl = $("#jumpList");
@@ -234,7 +298,9 @@ function rebuildJumpList(list){
   first.value = '';
   first.textContent = '선택하세요…';
   jumpEl.appendChild(first);
-  list.forEach((it, i) => {
+  // 가나다 정렬
+  const sorted = [...list].sort((a,b)=> a.f.name.localeCompare(b.f.name, 'ko'));
+  sorted.forEach((it, i) => {
     const { f } = it;
     const opt = document.createElement('option');
     const val = `${f.name}__${i}`;
@@ -276,7 +342,7 @@ function saveFilters(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(v)); }catch(e){}
 }
 
-/* 마커 생성 (color 필드 우선) */
+/* 마커 생성 */
 function makeMarker(f){
   const base = typeStyle[f.type] || typeStyle.default;
   const fill = f.color || base.fill;
@@ -329,10 +395,10 @@ function onFilterChange(){
   filterTimer = setTimeout(renderAll, 80);
 }
 
-/* 데이터 로드 (여러 소스 폴백 + JSON 파서 보강) */
+/* 데이터 로드 */
 async function loadFacilities(){
   const ctrl = new AbortController();
-  const t = setTimeout(()=> ctrl.abort(), 12000); // 12s 타임아웃
+  const t = setTimeout(()=> ctrl.abort(), 12000);
   let lastErr = null;
   try{
     for (const url of DATA_URLS){
@@ -343,18 +409,15 @@ async function loadFacilities(){
         let json;
         try { json = JSON.parse(text); }
         catch(parseErr){
-          // 페이지 부가 텍스트가 섞인 경우: 첫 '[' ~ 마지막 ']' 잘라 재시도
           const start = text.indexOf('[');
           const end = text.lastIndexOf(']');
           if (start !== -1 && end !== -1 && end > start){
-            try { json = JSON.parse(text.slice(start, end + 1)); }
-            catch(inner){ throw new Error(`JSON 파싱 오류 @ ${new URL(url).host}`); }
+            json = JSON.parse(text.slice(start, end + 1));
           } else {
             throw new Error(`JSON 파싱 오류 @ ${new URL(url).host}`);
           }
         }
-        // 스키마 최소 검증 (name/lat/lng)
-        const ok = json.every(o =>
+        const ok = Array.isArray(json) && json.every(o =>
           o && typeof o.name === 'string' &&
           o.lat !== undefined && o.lng !== undefined &&
           !Number.isNaN(Number(o.lat)) && !Number.isNaN(Number(o.lng))
@@ -362,31 +425,31 @@ async function loadFacilities(){
         if (!ok){ lastErr = new Error(`필수 필드 누락 @ ${new URL(url).host}`); continue; }
 
         facilities = json;
-        // ▼ f(원본)도 보존해서 드롭다운에서 좌표/레이어 접근 용이
         items = facilities.map(f => ({ f, layer: makeMarker(f), type: f.type || "default" }));
         renderAll();
-        toast(`마커 ${facilities.length}건 로드됨 (${new URL(url).host})`);
+
+        // ✅ 간단 알림: 성공만
+        toast('✅ 데이터 로드 완료');
         console.info('[WMS] loaded from', url);
-        return; // 성공 시 종료
+        return;
       }catch(inner){
         lastErr = inner;
         console.warn('[WMS] source failed:', url, inner);
         continue;
       }
     }
-    // 여기 도달 시 모든 소스 실패
+    // 모두 실패
     throw lastErr || new Error('모든 데이터 소스 실패');
   } catch(e){
     console.error(e);
-    if(String(e).includes('인증 필요')) toast('🔒 인증이 필요합니다. 다시 접속해 주세요.');
-    else if (String(e).includes('AbortError')) toast('⏱️ 네트워크 지연으로 중단되었습니다.');
-    else toast('⚠️ 데이터 불러오기 실패: ' + (e && e.message ? e.message : '원인 불명'));
+    // ❌ 간단 알림: 실패만
+    toast('❌ 데이터 로드 실패');
   } finally{
     clearTimeout(t);
   }
 }
 
-/* 내 위치 추적 */
+/* 내 위치 추적 (기존 유지) */
 function toggleTracking(){
   const btn = $("#gpsBtn");
   if (tracking){
@@ -423,18 +486,29 @@ map.on("moveend zoomend", ()=> writeHash(map.getZoom(), map.getCenter()));
 $("#showSmall").addEventListener("change", onFilterChange);
 $("#showStream").addEventListener("change", onFilterChange);
 $("#showStation").addEventListener("change", onFilterChange);
+$("#gpsBtn").addEventListener("click", toggleTracking);
 
 /* 초기화 */
+initPanelCollapsed();
 loadFilters();
 loadFacilities();
 
-/* 레이아웃 보정: load 시 두 번 */
+/* 레이아웃 보정 */
 window.addEventListener('load', ()=>{
   setTimeout(()=> map.invalidateSize(), 0);
   setTimeout(()=> map.invalidateSize(), 200);
 });
-window.addEventListener('resize', ()=>{ map.invalidateSize(); document.body.offsetHeight; });
-
+window.addEventListener('resize', ()=>{
+  map.invalidateSize();
+  // 화면 크기 바뀌면 모바일 기준 접힘 재평가 (사용자 수동으로 열었다면 유지)
+  if (window.matchMedia("(max-width:640px)").matches && !panel.classList.contains("collapsed")){
+    // 그대로 둠
+  } else if (window.matchMedia("(max-width:640px)").matches){
+    setCollapsed(true);
+  } else {
+    setCollapsed(false);
+  }
+});
 </script>
 </body>
 </html>
