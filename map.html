@@ -158,7 +158,13 @@ const INITIAL_CENTER = [37.4106329, 127.1255116];
 const INITIAL_ZOOM   = 16;
 
 /* 민감 데이터는 JS에 하드코딩하지 않고, 보호된 경로에서 불러온다. (_headers로 /data/* 보호) */
-const DATA_URL = "https://gist.githubusercontent.com/phattonly1/9309e6ef4dd423e20628a28512edf12b/raw/7452906127b85ad19f156d19de04141b49885411/facilities.json";
+// Gist 원본 + 미러 (CORS/네트워크 이슈 대비)
+const GIST_INFO = { user:'phattonly1', id:'9309e6ef4dd423e20628a28512edf12b', commit:'7452906127b85ad19f156d19de04141b49885411', file:'facilities.json' };
+const DATA_URLS = [
+  `https://gist.githubusercontent.com/${GIST_INFO.user}/${GIST_INFO.id}/raw/${GIST_INFO.commit}/${GIST_INFO.file}`,
+  `https://gistcdn.githack.com/${GIST_INFO.user}/${GIST_INFO.id}/raw/${GIST_INFO.commit}/${GIST_INFO.file}`,
+  `https://cdn.statically.io/gist/${GIST_INFO.user}/${GIST_INFO.id}/${GIST_INFO.commit}/${GIST_INFO.file}`,
+];
 
 /* URL 해시 공유(#z/lat/lng) */
 function readHash(){
@@ -233,14 +239,22 @@ function saveFilters(){
 
 /* 마커 생성 */
 function makeMarker(f){
-  const t = typeStyle[f.type] || typeStyle.default;
-  const m = L.circleMarker([f.lat,f.lng], {
-    radius:t.radius, color:'#000', weight:1, fillColor:t.fill, fillOpacity:0.9
+  // 색상 우선순위: 항목 color > 유형 기본색
+  const base = typeStyle[f.type] || typeStyle.default;
+  const fill = f.color || base.fill;
+  const stroke = '#000';
+  const m = L.circleMarker([Number(f.lat), Number(f.lng)], {
+    radius: base.radius || 8,
+    color: stroke,
+    weight: 1,
+    fillColor: fill,
+    fillOpacity: 0.9
   }).bindTooltip(f.name, tooltipOpt);
   if (f.popupHtml){
     m.bindPopup(f.popupHtml, { maxWidth: 260 });
-  }else{
-    m.bindPopup(`<b>${f.name}</b><br>ID: ${f.id || '-'}<br>유형: ${f.type}`);
+  } else {
+    const id = f.id ? `ID: ${f.id}<br>` : '';
+    m.bindPopup(`<b>${f.name}</b><br>${id}유형: ${f.type || 'unknown'}`);
   }
   return m;
 }
@@ -279,19 +293,54 @@ function onFilterChange(){
 async function loadFacilities(){
   const ctrl = new AbortController();
   const t = setTimeout(()=> ctrl.abort(), 12000); // 12s 타임아웃
+  let lastErr = null;
   try{
-    const res = await fetch(DATA_URL, { cache:"no-store", signal: ctrl.signal });
-    if (res.status === 401 || res.status === 403) throw new Error("인증 필요 (401/403)");
-    if (!res.ok) throw new Error("HTTP "+res.status);
-    facilities = await res.json();
-    items = facilities.map(f => ({ layer: makeMarker(f), type: f.type || "default" }));
-    renderAll();
-    toast("마커 데이터를 불러왔습니다.");
+    for (const url of DATA_URLS){
+      try{
+        const res = await fetch(url, { mode:'cors', cache:'no-store', credentials:'omit', referrerPolicy:'no-referrer', signal: ctrl.signal, headers:{ 'Accept':'application/json' } });
+        if (!res.ok){ lastErr = new Error(`HTTP ${res.status} @ ${new URL(url).host}`); continue; }
+        const text = await res.text();
+let json;
+try { json = JSON.parse(text); }
+catch(parseErr){
+  // 방어적으로 페이지 HTML/주석 등 섞인 경우를 정리: 첫 '['부터 마지막 ']'까지 추출 시도
+  const start = text.indexOf('[');
+  const end = text.lastIndexOf(']');
+  if (start !== -1 && end !== -1 && end > start){
+    try { json = JSON.parse(text.slice(start, end + 1)); }
+    catch(inner){ throw new Error(`JSON 파싱 오류 @ ${new URL(url).host}`); }
+  } else {
+    throw new Error(`JSON 파싱 오류 @ ${new URL(url).host}`);
+  }
+}
+if (!Array.isArray(json)) { lastErr = new Error(`JSON 루트가 배열이 아님 @ ${new URL(url).host}`); continue; }
+        // 스키마 최소 검증
+        // 스키마 최소 검증 (lat/lng이 숫자 또는 숫자문자열이어도 허용)
+const ok = json.every(o =>
+  o && typeof o.name === 'string' &&
+  o.lat !== undefined && o.lng !== undefined &&
+  !Number.isNaN(Number(o.lat)) && !Number.isNaN(Number(o.lng))
+);
+        if (!ok){ lastErr = new Error(`필수 필드 누락 @ ${new URL(url).host}`); continue; }
+        facilities = json;
+        items = facilities.map(f => ({ layer: makeMarker(f), type: f.type || 'default' }));
+        renderAll();
+        toast(`마커 ${facilities.length}건 로드됨 (${new URL(url).host})`);
+        console.info('[WMS] loaded from', url);
+        return; // 성공 시 종료
+      }catch(inner){
+        lastErr = inner;
+        console.warn('[WMS] source failed:', url, inner);
+        continue;
+      }
+    }
+    // 여기 도달 시 모든 소스 실패
+    throw lastErr || new Error('모든 데이터 소스 실패');
   } catch(e){
     console.error(e);
-    if(String(e).includes("인증 필요")) toast("🔒 인증이 필요합니다. 다시 접속해 주세요.");
-    else if (String(e).includes("AbortError")) toast("⏱️ 네트워크 지연으로 중단되었습니다.");
-    else toast("⚠️ 데이터 불러오기 실패");
+    if(String(e).includes('인증 필요')) toast('🔒 인증이 필요합니다. 다시 접속해 주세요.');
+    else if (String(e).includes('AbortError')) toast('⏱️ 네트워크 지연으로 중단되었습니다.');
+    else toast('⚠️ 데이터 불러오기 실패: ' + (e && e.message ? e.message : '원인 불명'));
   } finally{
     clearTimeout(t);
   }
