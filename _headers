@@ -1,9 +1,0 @@
-/map.html
-  Basic-Auth: admin:pass1234
-  X-Robots-Tag: noindex, nofollow, noarchive
-  Cache-Control: no-store
-
-/data/*
-  Basic-Auth: admin:pass1234
-  X-Robots-Tag: noindex, nofollow, noarchive
-  Cache-Control: no-store
