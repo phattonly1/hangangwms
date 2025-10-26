@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-<title>수질측정망 지도 · 우하단 도킹 레이아웃</title>
+<title>수질측정망 지도 · 우하단 도킹 최종판</title>
 <link rel="icon" href="./assets/gongdan-mark.png" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
@@ -15,8 +15,8 @@
     --sa-r: env(safe-area-inset-right, 0px);
     --sa-b: env(safe-area-inset-bottom, 0px);
     --sa-l: env(safe-area-inset-left, 0px);
-    /* Leaflet 컨트롤(우하단) 높이 추정 → 커스텀 버튼 도킹 오프셋 */
-    --leaflet-bottom: 96px; /* 필요시 80~120px 사이에서 조정 */
+    /* Leaflet 우하단 컨트롤 실제 높이를 JS로 대입 (초기값 96px) */
+    --leaflet-bottom: 96px;
   }
   html{ -webkit-text-size-adjust:100%; }
   input, select, button{ font-size:16px; }
@@ -32,22 +32,24 @@
   }
   .title{font-weight:800;letter-spacing:-.02em}
 
+  /* 지도 */
   .wrap{ position:relative; height: calc(100svh - var(--hdr)); min-height: 420px; }
   #map{width:100%;height:100%}
 
-  /* ===== Leaflet 컨트롤: 모두 우하단(최하단) ===== */
+  /* Leaflet 컨트롤: 모두 우하단(최하단) */
   .leaflet-control-container .leaflet-bottom.leaflet-right{
     margin-right: calc(var(--gap) + var(--sa-r));
     margin-bottom: calc(var(--gap) + var(--sa-b));
+    z-index: 1000;
   }
   .leaflet-control{box-shadow:0 2px 8px rgba(0,0,0,.4)!important;border-radius:12px!important}
   .leaflet-control a{border-radius:12px!important}
 
-  /* ===== 우하단 도크(우리 아이콘 스택) ===== */
+  /* 우하단 도킹: 우리 아이콘 스택 (Leaflet 위) */
   .br-dock{
     position:fixed; z-index:1200;
     right: calc(var(--gap) + var(--sa-r));
-    bottom: calc(var(--leaflet-bottom) + var(--gap) + var(--sa-b)); /* Leaflet 위에 겹치지 않게 */
+    bottom: calc(var(--leaflet-bottom) + 12px + var(--sa-b));
     display:flex; flex-direction:column; gap:10px;
   }
   .br-dock .btn{
@@ -60,27 +62,17 @@
   .btn:active{ transform:translateY(1px) }
   .btn--gps{ background:#00b894; color:#fff; }
 
-  /* 토스트: 도크 위에 */
-  .toast{
-    position:fixed; z-index:1200;
-    right: calc(var(--gap) + var(--sa-r));
-    bottom: calc(var(--leaflet-bottom) + var(--gap) + var(--sa-b) + var(--btn) + 12px);
-    background:rgba(0,0,0,.88); color:#fff; border-radius:10px; padding:10px 12px; font-size:14px;
-    opacity:0; pointer-events:none; transition:opacity .2s
-  }
-  .toast.show{opacity:1}
-
-  /* ===== 패널: 우하단에서 위로 펼침 ===== */
+  /* 패널: 우하단에서 위로 뜸 (아이콘 위) */
   .panel{
     position:fixed; z-index:1250;
     right: calc(var(--gap) + var(--sa-r));
-    bottom: calc(var(--leaflet-bottom) + var(--gap) + var(--sa-b) + var(--btn) + 12px);
+    bottom: calc(var(--leaflet-bottom) + 12px + var(--sa-b) + var(--btn) + 12px);
     background:rgba(16,27,42,.96); color:#e6eef6;
     border:1px solid rgba(255,255,255,.1); border-radius:var(--round);
-    padding:10px; max-width:min(92vw, 380px);
+    padding:10px; max-width:min(92vw, 420px);
     display:grid; grid-template-columns:1fr; row-gap:8px;
   }
-  .panel.collapsed{ display:none; } /* 아이콘 탭 시 토글 */
+  .panel.collapsed{ display:none; }
 
   .panel .group.filters{
     display:grid; grid-template-columns:1fr; row-gap:8px; /* 모바일: 체크 3줄 */
@@ -92,10 +84,20 @@
     border-radius:10px; padding:8px 10px; font-size:16px; width:100%;
   }
 
-  /* 데스크탑에선 패널 좀 더 넓게 */
+  /* 토스트: 도킹/패널 위쪽 */
+  .toast{
+    position:fixed; z-index:1225;
+    right: calc(var(--gap) + var(--sa-r));
+    bottom: calc(var(--leaflet-bottom) + 12px + var(--sa-b) + var(--btn) + 12px + 8px);
+    background:rgba(0,0,0,.88); color:#fff; border-radius:10px; padding:10px 12px; font-size:14px;
+    opacity:0; pointer-events:none; transition:opacity .2s
+  }
+  .toast.show{opacity:1}
+
+  /* 데스크탑에선 패널 좀 넓게 + 체크 2열 */
   @media (min-width:1024px){
-    body.is-desktop .panel{ max-width:520px; }
-    body.is-desktop .panel .group.filters{ grid-template-columns:1fr 1fr; column-gap:12px; } /* 2열로 깔끔 */
+    .panel{ max-width:560px; }
+    .panel .group.filters{ grid-template-columns:1fr 1fr; column-gap:12px; }
   }
 
   /* 에러 박스 */
@@ -115,7 +117,6 @@
     <div class="br-dock" aria-label="우하단 도킹 컨트롤">
       <!-- 필터(패널 토글) : 깔때기 아이콘 -->
       <button class="btn" id="panelToggle" aria-label="필터 열기/닫기" aria-expanded="false" title="필터">
-        <!-- funnel icon -->
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" stroke-width="2" stroke-linejoin="round"></path>
         </svg>
@@ -124,7 +125,7 @@
       <button class="btn btn--gps" id="gpsBtn" aria-label="내 위치" title="내 위치">📍</button>
     </div>
 
-    <!-- 패널(우하단에서 위쪽으로 떠오름) -->
+    <!-- 패널(우하단에서 위로) -->
     <div class="panel collapsed" id="panel">
       <div class="group filters">
         <label><input type="checkbox" id="showSmall" checked>소규모</label>
@@ -152,25 +153,24 @@
 
   /* 지도 & 컨트롤(둘 다 우하단) */
   const map = L.map('map', { zoomControl:false, preferCanvas:true });
-  // 줌도 우하단에 배치
   L.control.zoom({position:'bottomright'}).addTo(map);
   const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM & CARTO'}).addTo(map);
   const osm   = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'});
   const hot   = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{attribution:'© OSM HOT'});
-  // 레이어 스위처도 우하단(최하단)
   L.control.layers({"Carto":carto,"OSM":osm,"HOT":hot}, null, {position:'bottomright'}).addTo(map);
   map.setView([37.5665,126.9780], 11);
 
-  /* 데스크탑 모드 플래그(폰/PC 공통 도킹 유지) */
-  function applyDesktopMode(){
-    const pointerFine = matchMedia('(pointer:fine)').matches;
-    const wide = window.innerWidth >= 1024;
-    document.body.classList.toggle('is-desktop', pointerFine || wide);
-    map.invalidateSize();
+  /* Leaflet 컨트롤 실제 높이에 맞춰 도킹 오프셋 자동 보정 */
+  function updateLeafletBottomOffset(){
+    const ctr = document.querySelector('.leaflet-control-container .leaflet-bottom.leaflet-right');
+    const h = ctr ? Math.ceil(ctr.getBoundingClientRect().height) : 96;
+    document.documentElement.style.setProperty('--leaflet-bottom', h + 'px');
   }
-  addEventListener('resize', applyDesktopMode);
-  addEventListener('load', applyDesktopMode);
-  setTimeout(applyDesktopMode, 200);
+  addEventListener('load', updateLeafletBottomOffset);
+  addEventListener('resize', updateLeafletBottomOffset);
+  addEventListener('orientationchange', updateLeafletBottomOffset);
+  setTimeout(updateLeafletBottomOffset, 200);
+  setTimeout(updateLeafletBottomOffset, 600);
 
   /* 토스트 */
   const toast = (m,ms=1500)=>{ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),ms); };
@@ -200,15 +200,18 @@
   let items = [];
   const cluster = L.markerClusterGroup({ maxClusterRadius:40, showCoverageOnHover:false });
 
-  /* 패널 토글 */
+  /* 패널 토글 (버그 수정: 진짜 토글되도록) */
   function setPanelCollapsed(collapsed){
     panelEl.classList.toggle('collapsed', collapsed);
     panelToggleBtn.setAttribute('aria-expanded', String(!collapsed));
     map.invalidateSize();
   }
-  // 모바일 기본 접힘, PC도 접힘으로 시작(우하단 도킹 UI 일관성)
+  // 시작은 접힘
   addEventListener('load', ()=> setPanelCollapsed(true));
-  panelToggleBtn.addEventListener('click', ()=> setPanelCollapsed(panelEl.classList.contains('collapsed')));
+  panelToggleBtn.addEventListener('click', ()=>{
+    const current = panelEl.classList.contains('collapsed');
+    setPanelCollapsed(!current); // 현재 접힘이면 펼치고, 펼쳐져 있으면 접기
+  });
 
   /* 마커 */
   function mkMarker(f){
@@ -246,25 +249,14 @@
   }
 
   ['showSmall','showStream','showStation'].forEach(id=>{
-    // 체크박스는 패널 내부라 DOM 쿼리는 패널 열릴 때도 동일
-  });
-  // 이벤트 바인딩(지연 바인딩 보호)
-  function bindFilterEvents(){
-    const s=document.getElementById('showSmall');
-    const t=document.getElementById('showStream');
-    const st=document.getElementById('showStation');
-    [s,t,st].forEach((el,idx)=>{
-      if(!el || el.dataset.bound) return;
-      el.dataset.bound='1';
-      el.addEventListener('change', ()=>{
-        typeOn.small   = s.checked;
-        typeOn.stream  = t.checked;
-        typeOn.station = st.checked;
-        renderAll();
-      });
+    const el = document.getElementById(id);
+    el.addEventListener('change', ()=>{
+      typeOn.small   = document.getElementById('showSmall').checked;
+      typeOn.stream  = document.getElementById('showStream').checked;
+      typeOn.station = document.getElementById('showStation').checked;
+      renderAll();
     });
-  }
-  bindFilterEvents();
+  });
 
   jumpEl.addEventListener('change', e=>{
     const v = e.target.value; if(!v) return;
