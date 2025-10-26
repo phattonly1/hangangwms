@@ -5,15 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>수질측정망 지도</title>
 <link rel="icon" href="./assets/gongdan-mark.png" />
-
-<!-- 색인 방지(헤더에서도 X-Robots-Tag 설정했어도 중복 안전) -->
 <meta name="robots" content="noindex,nofollow,noarchive" />
 
 <!-- Leaflet & MarkerCluster -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<link rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin="">
+<link rel="stylesheet"
+  href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet"
+  href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <style>
@@ -36,13 +41,14 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  /* 본문 레이아웃 */
+  /* 지도 영역 (svh 폴백 포함) */
   .map-wrap{
     position:relative;
-    height:calc(100svh - var(--HDR-H));
-    min-height:400px;
+    height: calc(100svh - var(--HDR-H));
+    height: calc(100vh - var(--HDR-H)); /* 폴백 */
+    min-height: 400px;
   }
-  #map{ width:100%; height:100%; }
+  #map{ width:100%; height:100%; min-height:300px; } /* 안전장치 */
 
   /* UI 패널/버튼 */
   .filter-panel{
@@ -77,7 +83,7 @@
     font-weight:bold; font-size:14px; color:#222; text-shadow:1px 1px 2px #fff;
   }
 
-  /* 내 위치 마커(눈에 띄는 원형 링) */
+  /* 내 위치 마커(둥근 점+링) */
   .me-dot{
     width:16px; height:16px; border:3px solid #0ea5e9; background:#38bdf8; border-radius:999px;
     box-shadow:0 0 0 4px rgba(56,189,248,.25);
@@ -118,16 +124,16 @@
 
 <script>
 /* ===== 기본 설정 ===== */
-// 초기 중심(성남시 분당구 장미로 42)
+// 초기 중심
 const INITIAL_CENTER = [37.4106329, 127.1255116];
 const INITIAL_ZOOM   = 16;
 
 /* 민감 데이터는 JS에 하드코딩하지 않고, 보호된 경로에서 불러온다. (_headers로 /data/* 보호) */
 const DATA_URL = "/data/markers.json";
 
-/* URL 해시 공유(#z/lat/lng) 지원 */
+/* URL 해시 공유(#z/lat/lng) */
 function readHash(){
-  const m = location.hash.match(/^#(\\d+)\\/([\\d.-]+)\\/([\\d.-]+)/);
+  const m = location.hash.match(/^#(\d+)\/([\d.-]+)\/([\d.-]+)/);
   if(!m) return null;
   return { z: +m[1], lat: +m[2], lng: +m[3] };
 }
@@ -135,7 +141,7 @@ function writeHash(z, center){
   history.replaceState(null, "", `#${z}/${center.lat.toFixed(5)}/${center.lng.toFixed(5)}`);
 }
 
-/* 저장될 필터 키 */
+/* 필터 저장 키 */
 const LS_KEY = "wms_filters_v1";
 
 /* ===== 지도 초기화 ===== */
@@ -145,11 +151,13 @@ map.setView(initFromHash ? [initFromHash.lat, initFromHash.lng] : INITIAL_CENTER
 
 L.control.zoom({position:'topright'}).addTo(map);
 
-/* 베이스 타일 */
+/* 베이스 타일 (add 후 size 재계산 2회) */
 const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM & CARTO'}).addTo(map);
-const osm   = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OSM'});
-const hot   = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{attribution:'&copy; OSM HOT'});
+const osm   = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'});
+const hot   = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{attribution:'© OSM HOT'});
 L.control.layers({"Carto":carto,"OSM":osm,"HOT":hot}, null, {position:'topright'}).addTo(map);
+setTimeout(()=> map.invalidateSize(), 0);
+setTimeout(()=> map.invalidateSize(), 150);
 
 /* 클러스터 */
 const cluster = L.markerClusterGroup({
@@ -224,7 +232,6 @@ function renderAll(){
   filtered.forEach(it => cluster.addLayer(it.layer));
   map.addLayer(cluster);
 
-  // 범위 맞추기(마커 있을 때만)
   if (filtered.length){
     const g = L.featureGroup(filtered.map(it=>it.layer));
     try{ map.fitBounds(g.getBounds().pad(0.12), { animate:false }); }catch(e){}
@@ -245,9 +252,7 @@ async function loadFacilities(){
   const t = setTimeout(()=> ctrl.abort(), 12000); // 12s 타임아웃
   try{
     const res = await fetch(DATA_URL, { cache:"no-store", signal: ctrl.signal });
-    if (res.status === 401 || res.status === 403) {
-      throw new Error("인증 필요 (401/403)");
-    }
+    if (res.status === 401 || res.status === 403) throw new Error("인증 필요 (401/403)");
     if (!res.ok) throw new Error("HTTP "+res.status);
     facilities = await res.json();
     items = facilities.map(f => ({ layer: makeMarker(f), type: f.type || "default" }));
@@ -277,7 +282,6 @@ function toggleTracking(){
   watchId = navigator.geolocation.watchPosition(
     pos=>{
       const { latitude:lat, longitude:lng } = pos.coords;
-      // 내 위치 마커(둥근 점)
       const el = document.createElement('div'); el.className = 'me-dot';
       const divIcon = L.divIcon({ className:'', html: el, iconSize:[16,16], iconAnchor:[8,8] });
       if (meMarker) meMarker.setLatLng([lat,lng]); else meMarker = L.marker([lat,lng], { icon: divIcon }).addTo(map).bindPopup("📍 내 위치");
@@ -294,7 +298,7 @@ function toggleTracking(){
   toast("📡 실시간 추적 시작");
 }
 
-/* 지도 이벤트 -> 주소 해시 업데이트 */
+/* 주소 해시 업데이트 */
 map.on("moveend zoomend", ()=> writeHash(map.getZoom(), map.getCenter()));
 
 /* 이벤트 바인딩 */
@@ -316,8 +320,11 @@ $("#gpsBtn").addEventListener("click", toggleTracking);
 loadFilters();
 loadFacilities();
 
-/* 레이아웃 보정 */
-window.addEventListener('load', ()=> setTimeout(()=>map.invalidateSize(), 0));
+/* 레이아웃 보정: load 시 두 번 */
+window.addEventListener('load', ()=>{
+  setTimeout(()=> map.invalidateSize(), 0);
+  setTimeout(()=> map.invalidateSize(), 200);
+});
 window.addEventListener('resize', ()=>{ map.invalidateSize(); document.body.offsetHeight; });
 
 </script>
