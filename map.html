@@ -1,514 +1,70 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>수질측정망 지도</title>
 <link rel="icon" href="./assets/gongdan-mark.png" />
-<meta name="robots" content="noindex,nofollow,noarchive" />
-<meta name="theme-color" content="#f5f7fb" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0b2239" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0b2239" />
 
-<!-- Leaflet & MarkerCluster -->
-<link rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-  crossorigin="">
-<link rel="stylesheet"
-  href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-<link rel="stylesheet"
-  href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-  crossorigin=""></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <style>
-  :root{ --HDR-H: 64px; }
-  *{ box-sizing:border-box }
-  html, body { height:100%; margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Pretendard,Arial; }
-  body { background:#f5f7fb; color:#0b2239; }
-  @media (prefers-color-scheme: dark){ body{ background:#0b1622; color:#e6eef6; } }
+  :root{
+    --hdr: 56px;
+    --gap: 12px;
+    --gap-lg: 16px;
+    --panel-w: min(86vw, 320px);
+    /* 안전 여백(Safari 노치, 제스처바 포함) */
+    --sa-top: env(safe-area-inset-top, 0px);
+    --sa-right: env(safe-area-inset-right, 0px);
+    --sa-bottom: env(safe-area-inset-bottom, 0px);
+    --sa-left: env(safe-area-inset-left, 0px);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Pretendard,Arial}
+  body{background:#0b1622;color:#e6eef6}
 
-  /* 상단 헤더 */
+  /* 헤더 */
   .appbar{
-    height:var(--HDR-H); display:flex; align-items:center; gap:14px;
-    padding:0 16px; background:#fff; border-bottom:1px solid rgba(0,0,0,.06);
-    position:sticky; top:0; z-index:1000;
+    height:var(--hdr); position:sticky; top:0; z-index:1000;
+    padding:0 calc(var(--gap-lg) + var(--sa-right)) 0 calc(var(--gap-lg) + var(--sa-left));
+    display:flex; align-items:center; gap:10px;
+    background:#101b2a; border-bottom:1px solid rgba(255,255,255,.08);
   }
-  @media (prefers-color-scheme: dark){ .appbar{ background:#101b2a; border-color:rgba(255,255,255,.10);} }
-  .logo-img{ width:44px; height:44px; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(0,0,0,.12)); }
-  .title-text{ min-width:0; }
-  .title-text h1{
-    margin:0; font-weight:800; letter-spacing:-0.02em; line-height:1.1;
-    font-size: clamp(18px, 4.2vw, 26px);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
+  .logo-img{width:36px;height:36px;object-fit:contain}
+  .title{font-weight:800;letter-spacing:-.02em;font-size:18px}
 
-  /* 지도 영역 */
+  /* 지도 */
   .map-wrap{
     position:relative;
-    height: calc(100svh - var(--HDR-H));
-    height: calc(100vh - var(--HDR-H));
-    min-height: 400px;
+    height: calc(100svh - var(--hdr));
+    height: calc(100vh - var(--hdr));
+    min-height: 420px;
   }
-  #map{ width:100%; height:100%; min-height:300px; }
+  #map{width:100%;height:100%}
 
-  /* 필터 패널 (모바일 접힘 지원) */
+  /* 필터 패널: 좌상단 고정 + 안전여백 */
   .filter-panel{
-    position:absolute; left:10px; top:10px; z-index:1000;
-    background:rgba(255,255,255,0.96); padding:8px 10px; border-radius:12px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.2);
-    display:inline-flex; flex-direction:column; gap:6px; font-size:14px;
-    max-width: 80vw;
+    position:absolute; z-index:1100;
+    left: calc(var(--gap-lg) + var(--sa-left));
+    top: calc(var(--gap-lg) + var(--sa-top));
+    width: var(--panel-w);
+    background:rgba(16,27,42,.96); color:#e6eef6;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:14px; padding:10px 10px 12px; box-shadow:0 4px 10px rgba(0,0,0,.35);
   }
-  @media (prefers-color-scheme: dark){ .filter-panel{ background:rgba(16,27,42,.96); color:#e6eef6; box-shadow:0 2px 8px rgba(0,0,0,.5);} }
-
-  .panel-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  .filter-panel h2{ margin:0; font-size:13px; font-weight:700; color:#365b7a; }
-  @media (prefers-color-scheme: dark){ .filter-panel h2{ color:#8aa7c4; } }
-
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .panel-title{margin:0;font-size:13px;color:#9fb6cd}
   .panel-toggle{
-    border:none; background:transparent; padding:6px; border-radius:10px; cursor:pointer;
-    line-height:0; display:flex; align-items:center; justify-content:center;
+    border:none;background:transparent;color:#e6eef6;cursor:pointer;
+    width:34px;height:34px;border-radius:10px;display:grid;place-items:center
   }
-  .panel-toggle:focus-visible{ outline:2px solid #7aa7ff; outline-offset:2px; }
-  .panel-toggle svg{ width:20px; height:20px; }
-
-  .panel-body{ display:flex; flex-direction:column; gap:6px; margin-top:6px; }
-  label{ display:flex; align-items:center; gap:6px; white-space:nowrap; cursor:pointer; }
-
-  /* 드롭다운 */
-  .jump{ margin-top:4px; font-weight:700; color:#365b7a; }
-  @media (prefers-color-scheme: dark){ .jump{ color:#8aa7c4; } }
-  #jumpList{
-    margin-top:4px;border:1px solid #d0d7e2;background:#fff;border-radius:8px;padding:6px 10px;min-width:220px
-  }
-  @media (prefers-color-scheme: dark){ #jumpList{ background:#0f1725; color:#e6eef6; border-color:#334155; } }
-
-  /* 접힘 상태 */
-  .filter-panel.collapsed{
-    padding:6px; gap:0;
-  }
-  .filter-panel.collapsed .panel-head h2{ display:none; }
-  .filter-panel.collapsed .panel-body{ display:none; }
-  .filter-panel.collapsed .panel-toggle{ padding:8px; }
-
-  /* 모바일에서 기본 접힘 + 컨트롤 크기 조정 */
-  @media (max-width:640px){
-    .filter-panel{ border-radius:14px; }
-    .filter-panel .panel-body label{ font-size:13px; }
-    #jumpList{ min-width: 180px; padding:6px 8px; font-size:13px; }
-  }
-
-  .floating-btn{
-    position:absolute; bottom:20px; right:20px; z-index:1200;
-    width:52px; height:52px; border-radius:50%; background:#0078ff; color:#fff;
-    font-size:26px; font-weight:bold; border:none;
-    box-shadow:0 3px 8px rgba(0,0,0,0.3);
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer; transition:.2s ease;
-  }
-  .floating-btn:hover{ background:#005fcc; transform:scale(1.05); }
-
-  .toast{
-    position:fixed; bottom:90px; right:20px; z-index:2000;
-    background:rgba(0,0,0,0.86); color:#fff; padding:10px 14px; border-radius:8px; font-size:14px;
-    opacity:0; pointer-events:none; transition:opacity .25s ease;
-  }
-  .toast.show{ opacity:1; }
-
-  .leaflet-tooltip.station-tooltip{
-    font-weight:bold; font-size:14px; color:#222; text-shadow:1px 1px 2px #fff;
-  }
-
-  .me-dot{
-    width:16px; height:16px; border:3px solid #0ea5e9; background:#38bdf8; border-radius:999px;
-    box-shadow:0 0 0 4px rgba(56,189,248,.25);
-  }
-
-  .guide{ background:#fff; border-top:1px solid rgba(0,0,0,.06); }
-  @media (prefers-color-scheme: dark){ .guide{ background:#101b2a; border-color:rgba(255,255,255,.08);} }
-  .guide .inner{ max-width:1100px; margin:0 auto; padding:16px; }
-  .guide details{ border:1px solid rgba(0,0,0,.08); border-radius:12px; padding:10px 12px; background:rgba(255,255,255,.72); }
-  @media (prefers-color-scheme: dark){ .guide details{ background:rgba(16,27,42,.72); border-color:rgba(255,255,255,.10);} }
-  .guide summary{ cursor:pointer; font-weight:700; color:#365b7a; }
-  @media (prefers-color-scheme: dark){ .guide summary{ color:#8aa7c4; } }
-  .guide .note{ margin:8px 0 12px; color:#44607a; font-size:13px; }
-  @media (prefers-color-scheme: dark){ .guide .note{ color:#a3bed6; } }
-
-  @media (max-width:420px){
-    .logo-img{ width:40px; height:40px; }
-    .title-text h1{ font-size: clamp(16px, 5vw, 22px); }
-  }
-  @media (prefers-reduced-motion: reduce){
-    .floating-btn{ transition:none }
-    .toast{ transition:none }
-  }
-</style>
-</head>
-<body>
-  <!-- 헤더 -->
-  <header class="appbar">
-    <img class="logo-img" src="./assets/gongdan-mark.png" alt="공단 마크" />
-    <div class="title-text"><h1>수질측정망 지도</h1></div>
-  </header>
-
-  <!-- 지도 -->
-  <main class="map-wrap">
-    <div class="filter-panel" id="filterPanel" role="region" aria-label="유형 필터" data-collapsible="true">
-      <div class="panel-head">
-        <h2>표시 유형</h2>
-        <button class="panel-toggle" id="panelToggle" aria-controls="panelBody" aria-expanded="true" aria-label="필터 열고 닫기">
-          <!-- sliders icon -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-            <path stroke-width="2" stroke-linecap="round" d="M4 6h10M18 6h2M10 6v12M4 12h6M18 12h2M6 12v6M4 18h14M20 18h0M14 18v-8"/>
-          </svg>
-        </button>
-      </div>
-      <div class="panel-body" id="panelBody">
-        <label><input type="checkbox" id="showSmall" checked> 소규모</label>
-        <label><input type="checkbox" id="showStream" checked> 하천</label>
-        <label><input type="checkbox" id="showStation" checked> 측정소</label>
-
-        <div class="jump">리스트</div>
-        <select id="jumpList" aria-label="마커 리스트로 이동">
-          <option value="">선택하세요…</option>
-        </select>
-      </div>
-    </div>
-
-    <div id="map" role="region" aria-label="수질측정망 지도"></div>
-
-    <button class="floating-btn gps-btn" id="gpsBtn" aria-label="내 위치 추적 전환">📍</button>
-    <div class="toast" id="toast" role="status" aria-live="polite">알림</div>
-  </main>
-
-  <!-- Gist 가이드 -->
-  <section class="guide" aria-labelledby="guide-title">
-    <div class="inner">
-      <details>
-        <summary id="guide-title">도움말 · 코드 가이드 (GitHub Gist)</summary>
-        <p class="note">아래 내용은 GitHub Gist 임베드입니다.</p>
-        <script src="https://gist.github.com/phattonly1/9309e6ef4dd423e20628a28512edf12b.js"></script>
-      </details>
-    </div>
-  </section>
-
-<script>
-/* ===== 기본 설정 ===== */
-const INITIAL_CENTER = [37.4106329, 127.1255116];
-const INITIAL_ZOOM   = 16;
-
-const GIST_INFO = { user:'phattonly1', id:'9309e6ef4dd423e20628a28512edf12b', commit:'7452906127b85ad19f156d19de04141b49885411', file:'facilities.json' };
-const DATA_URLS = [
-  `https://gist.githubusercontent.com/${GIST_INFO.user}/${GIST_INFO.id}/raw/${GIST_INFO.commit}/${GIST_INFO.file}`,
-  `https://gistcdn.githack.com/${GIST_INFO.user}/${GIST_INFO.id}/raw/${GIST_INFO.commit}/${GIST_INFO.file}`,
-  `https://cdn.statically.io/gist/${GIST_INFO.user}/${GIST_INFO.id}/${GIST_INFO.commit}/${GIST_INFO.file}`,
-];
-
-/* URL 해시 공유(#z/lat/lng) */
-function readHash(){
-  const m = location.hash.match(/^#(\d+)\/([\d.-]+)\/([\d.-]+)/);
-  if(!m) return null;
-  return { z: +m[1], lat: +m[2], lng: +m[3] };
-}
-function writeHash(z, center){
-  history.replaceState(null, "", `#${z}/${center.lat.toFixed(5)}/${center.lng.toFixed(5)}`);
-}
-
-/* 필터 저장 키 */
-const LS_KEY = "wms_filters_v1";
-
-/* ===== 지도 초기화 ===== */
-const map = L.map("map", { zoomControl:false, preferCanvas:true });
-const initFromHash = readHash();
-map.setView(initFromHash ? [initFromHash.lat, initFromHash.lng] : INITIAL_CENTER, initFromHash ? initFromHash.z : INITIAL_ZOOM);
-
-L.control.zoom({position:'topright'}).addTo(map);
-
-/* 베이스 타일 */
-const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM & CARTO'}).addTo(map);
-const osm   = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'});
-const hot   = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{attribution:'© OSM HOT'});
-L.control.layers({"Carto":carto,"OSM":osm,"HOT":hot}, null, {position:'topright'}).addTo(map);
-setTimeout(()=> map.invalidateSize(), 0);
-setTimeout(()=> map.invalidateSize(), 150);
-
-/* 클러스터 */
-const cluster = L.markerClusterGroup({
-  maxClusterRadius: 40,
-  spiderfyOnMaxZoom: true,
-  showCoverageOnHover: false,
-});
-
-/* 상태 */
-let facilities=[], items=[];
-let meMarker=null, watchId=null, tracking=false;
-
-/* 타입별 스타일 */
-const typeStyle = {
-  station:{ color:'#ff6600', fill:'#0033cc', radius:8 },
-  small:  { color:'#33bbff', fill:'#33bbff', radius:10 },
-  stream: { color:'#3399ff', fill:'#3399ff', radius:12 },
-  default:{ color:'#666',    fill:'#666',    radius:8 }
-};
-const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-const tooltipOpt = isMobile ? {permanent:false} : {permanent:true,className:'station-tooltip',direction:'top',offset:[0,-10]};
-
-/* 유틸 */
-const $ = sel => document.querySelector(sel);
-const toast = (msg, ms=1800)=>{ const el=$("#toast"); el.textContent=msg; el.classList.add("show"); setTimeout(()=> el.classList.remove("show"), ms); };
-
-/* ▼ 패널 접힘/펼침 */
-const panel = $("#filterPanel");
-const panelToggle = $("#panelToggle");
-const panelBody = $("#panelBody");
-function setCollapsed(collapsed){
-  if(!panel) return;
-  panel.classList.toggle("collapsed", collapsed);
-  panelToggle.setAttribute("aria-expanded", String(!collapsed));
-}
-function initPanelCollapsed(){
-  // 모바일/작은 화면 기본 접힘
-  const smallScreen = window.matchMedia("(max-width:640px)").matches;
-  setCollapsed(smallScreen);
-}
-panelToggle.addEventListener("click", (e)=>{
-  e.stopPropagation();
-  setCollapsed(!panel.classList.contains("collapsed"));
-});
-document.addEventListener("click", (e)=>{
-  if (!panel.contains(e.target) && window.matchMedia("(max-width:640px)").matches){
-    setCollapsed(true);
-  }
-});
-window.addEventListener("keydown", (e)=>{
-  if (e.key === "Escape") setCollapsed(true);
-});
-
-/* ▼ 드롭다운 */
-const jumpEl = $("#jumpList");
-let jumpIndex = new Map();
-function rebuildJumpList(list){
-  if (!jumpEl) return;
-  jumpIndex.clear();
-  jumpEl.innerHTML = '';
-  const first = document.createElement('option');
-  first.value = '';
-  first.textContent = '선택하세요…';
-  jumpEl.appendChild(first);
-  // 가나다 정렬
-  const sorted = [...list].sort((a,b)=> a.f.name.localeCompare(b.f.name, 'ko'));
-  sorted.forEach((it, i) => {
-    const { f } = it;
-    const opt = document.createElement('option');
-    const val = `${f.name}__${i}`;
-    opt.value = val;
-    opt.textContent = f.name;
-    opt.dataset.lat = f.lat;
-    opt.dataset.lng = f.lng;
-    jumpIndex.set(val, it.layer);
-    jumpEl.appendChild(opt);
-  });
-}
-if (jumpEl){
-  jumpEl.addEventListener('change', (e)=>{
-    const val = e.target.value;
-    if (!val) return;
-    const opt = jumpEl.selectedOptions[0];
-    const lat = Number(opt.dataset.lat), lng = Number(opt.dataset.lng);
-    map.flyTo([lat, lng], Math.max(map.getZoom(), 16), { duration:0.5 });
-    const lyr = jumpIndex.get(val);
-    if (lyr){ setTimeout(()=> lyr.openPopup && lyr.openPopup(), 520); }
-  });
-}
-
-/* 필터 로드/저장 */
-function loadFilters(){
-  try{
-    const v = JSON.parse(localStorage.getItem(LS_KEY)||"{}");
-    if(typeof v.showSmall === "boolean")   $("#showSmall").checked = v.showSmall;
-    if(typeof v.showStream === "boolean")  $("#showStream").checked = v.showStream;
-    if(typeof v.showStation === "boolean") $("#showStation").checked = v.showStation;
-  }catch(e){}
-}
-function saveFilters(){
-  const v = {
-    showSmall:   $("#showSmall").checked,
-    showStream:  $("#showStream").checked,
-    showStation: $("#showStation").checked
-  };
-  try{ localStorage.setItem(LS_KEY, JSON.stringify(v)); }catch(e){}
-}
-
-/* 마커 생성 */
-function makeMarker(f){
-  const base = typeStyle[f.type] || typeStyle.default;
-  const fill = f.color || base.fill;
-  const m = L.circleMarker([Number(f.lat), Number(f.lng)], {
-    radius: base.radius || 8,
-    color:'#000',
-    weight:1,
-    fillColor: fill,
-    fillOpacity:0.9
-  }).bindTooltip(f.name, tooltipOpt);
-  if (f.popupHtml){
-    m.bindPopup(f.popupHtml, { maxWidth: 260 });
-  } else {
-    const id = f.id ? `ID: ${f.id}<br>` : '';
-    m.bindPopup(`<b>${f.name}</b><br>${id}유형: ${f.type || 'unknown'}`);
-  }
-  return m;
-}
-
-/* 렌더링 */
-function renderAll(){
-  cluster.clearLayers();
-  const showSmall   = $("#showSmall").checked;
-  const showStream  = $("#showStream").checked;
-  const showStation = $("#showStation").checked;
-
-  const filtered = items.filter(it =>
-    (it.type==='small'   && showSmall) ||
-    (it.type==='stream'  && showStream)||
-    (it.type==='station' && showStation)
-  );
-
-  filtered.forEach(it => cluster.addLayer(it.layer));
-  map.addLayer(cluster);
-
-  // 드롭다운 재구성
-  rebuildJumpList(filtered);
-
-  if (filtered.length){
-    const g = L.featureGroup(filtered.map(it=>it.layer));
-    try{ map.fitBounds(g.getBounds().pad(0.12), { animate:false }); }catch(e){}
-  }
-}
-
-/* 필터 이벤트(디바운스) */
-let filterTimer=null;
-function onFilterChange(){
-  saveFilters();
-  clearTimeout(filterTimer);
-  filterTimer = setTimeout(renderAll, 80);
-}
-
-/* 데이터 로드 */
-async function loadFacilities(){
-  const ctrl = new AbortController();
-  const t = setTimeout(()=> ctrl.abort(), 12000);
-  let lastErr = null;
-  try{
-    for (const url of DATA_URLS){
-      try{
-        const res = await fetch(url, { mode:'cors', cache:'no-store', credentials:'omit', referrerPolicy:'no-referrer', signal: ctrl.signal, headers:{ 'Accept':'application/json' } });
-        if (!res.ok){ lastErr = new Error(`HTTP ${res.status} @ ${new URL(url).host}`); continue; }
-        const text = await res.text();
-        let json;
-        try { json = JSON.parse(text); }
-        catch(parseErr){
-          const start = text.indexOf('[');
-          const end = text.lastIndexOf(']');
-          if (start !== -1 && end !== -1 && end > start){
-            json = JSON.parse(text.slice(start, end + 1));
-          } else {
-            throw new Error(`JSON 파싱 오류 @ ${new URL(url).host}`);
-          }
-        }
-        const ok = Array.isArray(json) && json.every(o =>
-          o && typeof o.name === 'string' &&
-          o.lat !== undefined && o.lng !== undefined &&
-          !Number.isNaN(Number(o.lat)) && !Number.isNaN(Number(o.lng))
-        );
-        if (!ok){ lastErr = new Error(`필수 필드 누락 @ ${new URL(url).host}`); continue; }
-
-        facilities = json;
-        items = facilities.map(f => ({ f, layer: makeMarker(f), type: f.type || "default" }));
-        renderAll();
-
-        // ✅ 간단 알림: 성공만
-        toast('✅ 데이터 로드 완료');
-        console.info('[WMS] loaded from', url);
-        return;
-      }catch(inner){
-        lastErr = inner;
-        console.warn('[WMS] source failed:', url, inner);
-        continue;
-      }
-    }
-    // 모두 실패
-    throw lastErr || new Error('모든 데이터 소스 실패');
-  } catch(e){
-    console.error(e);
-    // ❌ 간단 알림: 실패만
-    toast('❌ 데이터 로드 실패');
-  } finally{
-    clearTimeout(t);
-  }
-}
-
-/* 내 위치 추적 (기존 유지) */
-function toggleTracking(){
-  const btn = $("#gpsBtn");
-  if (tracking){
-    try{ navigator.geolocation.clearWatch(watchId); }catch(e){}
-    tracking=false; btn.textContent="📍"; btn.style.background="#0078ff";
-    if (meMarker){ map.removeLayer(meMarker); meMarker=null; }
-    toast("🛑 실시간 추적 종료");
-    return;
-  }
-  if (!navigator.geolocation){ toast("⚠️ 이 브라우저는 위치를 지원하지 않습니다."); return; }
-  watchId = navigator.geolocation.watchPosition(
-    pos=>{
-      const { latitude:lat, longitude:lng } = pos.coords;
-      const el = document.createElement('div'); el.className = 'me-dot';
-      const divIcon = L.divIcon({ className:'', html: el, iconSize:[16,16], iconAnchor:[8,8] });
-      if (meMarker) meMarker.setLatLng([lat,lng]); else meMarker = L.marker([lat,lng], { icon: divIcon }).addTo(map).bindPopup("📍 내 위치");
-      map.flyTo([lat,lng], Math.max(map.getZoom(), 14), { duration:0.5 });
-    },
-    err=>{
-      console.warn(err);
-      toast("⚠️ 위치 접근 실패(권한 확인)");
-      tracking=false; btn.textContent="📍"; btn.style.background="#0078ff";
-    },
-    { enableHighAccuracy:true, maximumAge:5000, timeout:10000 }
-  );
-  tracking=true; btn.textContent="🔵"; btn.style.background="#00b894";
-  toast("📡 실시간 추적 시작");
-}
-
-/* 주소 해시 업데이트 */
-map.on("moveend zoomend", ()=> writeHash(map.getZoom(), map.getCenter()));
-
-/* 이벤트 바인딩 */
-$("#showSmall").addEventListener("change", onFilterChange);
-$("#showStream").addEventListener("change", onFilterChange);
-$("#showStation").addEventListener("change", onFilterChange);
-$("#gpsBtn").addEventListener("click", toggleTracking);
-
-/* 초기화 */
-initPanelCollapsed();
-loadFilters();
-loadFacilities();
-
-/* 레이아웃 보정 */
-window.addEventListener('load', ()=>{
-  setTimeout(()=> map.invalidateSize(), 0);
-  setTimeout(()=> map.invalidateSize(), 200);
-});
-window.addEventListener('resize', ()=>{
-  map.invalidateSize();
-  // 화면 크기 바뀌면 모바일 기준 접힘 재평가 (사용자 수동으로 열었다면 유지)
-  if (window.matchMedia("(max-width:640px)").matches && !panel.classList.contains("collapsed")){
-    // 그대로 둠
-  } else if (window.matchMedia("(max-width:640px)").matches){
-    setCollapsed(true);
-  } else {
-    setCollapsed(false);
-  }
-});
-</script>
-</body>
-</html>
+  .panel-toggle:focus-visible{outline:2px solid #7aa7ff;outline-offset:2px}
+  .panel-body{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+  label{display:flex;align-items:center;gap:6px;font-size:14px}
+  .jump{font-weight:700;color:#9f
