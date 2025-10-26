@@ -2,27 +2,32 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>수질측정망 지도 · Safe Mode (with data)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>수질측정망 지도 · Android Whale 안정판</title>
 <link rel="icon" href="./assets/gongdan-mark.png" />
-
-<!-- Leaflet & Cluster -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-
 <style>
   :root{
     --hdr:56px; --gap:12px;
-    --sa-t:env(safe-area-inset-top,0px);
-    --sa-r:env(safe-area-inset-right,0px);
-    --sa-b:env(safe-area-inset-bottom,0px);
-    --sa-l:env(safe-area-inset-left,0px);
+    /* safe-area: Android Whale에선 0 이어도 OK */
+    --sa-t: env(safe-area-inset-top, 0px);
+    --sa-r: env(safe-area-inset-right, 0px);
+    --sa-b: env(safe-area-inset-bottom, 0px);
+    --sa-l: env(safe-area-inset-left, 0px);
+    --ui-sz: 56px; /* GPS 같은 플로팅 버튼 크기 기준 */
   }
+
+  /* 폰트 16px 이상으로 포커스 줌 방지 (Chromium) */
+  html{ -webkit-text-size-adjust:100%; }
+  input, select, button{ font-size:16px; }
+
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;font-family:system-ui,Apple SD Gothic Neo,Pretendard,Segoe UI,Roboto,Arial}
   body{background:#0b1622;color:#e6eef6}
 
+  /* 헤더 */
   .appbar{
     position:sticky;top:0;z-index:10;height:var(--hdr);
     padding:0 calc(var(--gap)+var(--sa-r)) 0 calc(var(--gap)+var(--sa-l));
@@ -30,248 +35,56 @@
   }
   .title{font-weight:800;letter-spacing:-.02em}
 
-  .wrap{position:relative;height:calc(100dvh - var(--hdr));min-height:420px}
+  /* 지도: 100svh로 주소창 변동 대응 */
+  .wrap{
+    position:relative;
+    height: calc(100svh - var(--hdr));
+    min-height: 420px;
+  }
   #map{width:100%;height:100%}
 
-  /* 좌상단 패널(세이프존 보장) */
+  /* ====== UI 오버레이: Android에선 fixed가 가장 안정적 ====== */
+  /* 좌상단 패널(icons + 필터 + 드롭다운) */
   .panel{
-    position:absolute;z-index:1100;
-    left:calc(var(--gap)+var(--sa-l)); top:calc(var(--gap)+var(--sa-t));
-    background:rgba(16,27,42,.96);color:#e6eef6;border:1px solid rgba(255,255,255,.1);
-    border-radius:14px;padding:8px 10px;display:flex;align-items:center;gap:8px
+    position:fixed; z-index:1100;
+    left: calc(var(--gap) + var(--sa-l));
+    top:  calc(var(--gap) + var(--sa-t));
+    background:rgba(16,27,42,.96); color:#e6eef6;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:14px; padding:8px 10px;
+    display:flex; align-items:center; gap:10px;
+    max-width: min(92vw, 360px);
   }
   .panel .icon{
-    width:36px;height:36px;border:none;border-radius:10px;background:transparent;color:#e6eef6;display:grid;place-items:center;cursor:pointer
+    width:36px; height:36px; border:none; border-radius:10px;
+    background:transparent; color:#e6eef6; display:grid; place-items:center; cursor:pointer
   }
-  .panel .group{display:flex;align-items:center;gap:8px}
-  .panel label{display:flex;align-items:center;gap:6px;font-size:13px}
+  .panel .group{ display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+  .panel label{ display:flex; align-items:center; gap:8px; font-size:16px; line-height:1 }
+  .panel input[type="checkbox"]{
+    width:18px; height:18px; accent-color:#4da3ff;
+  }
   .panel select{
-    max-width:min(60vw,260px);border:1px solid #334155;background:#0f1725;color:#e6eef6;
-    border-radius:10px;padding:8px 10px;font-size:13px
+    border:1px solid #334155; background:#0f1725; color:#e6eef6;
+    border-radius:10px; padding:8px 10px; font-size:16px; max-width:min(60vw,260px)
   }
 
-  /* 우상단 줌 */
-  .leaflet-top.leaflet-right{
-    top:calc(var(--gap)+var(--sa-t));
-    right:calc(var(--gap)+var(--sa-r));
+  /* 우상단: Leaflet 줌은 컨트롤 자체 위치 + 마진으로 세이프존 */
+  .leaflet-control-container .leaflet-top.leaflet-right{
+    margin-top: calc(var(--gap) + var(--sa-t));
+    margin-right: calc(var(--gap) + var(--sa-r));
   }
-  /* 우하단 레이어 */
-  .leaflet-bottom.leaflet-right{
-    right:calc(var(--gap)+var(--sa-r));
-    bottom:calc(88px + var(--sa-b));
+  /* 우하단: 레이어 스위처는 GPS 위에 겹치지 않게 오프셋 */
+  .leaflet-control-container .leaflet-bottom.leaflet-right{
+    margin-right: calc(var(--gap) + var(--sa-r));
+    margin-bottom: calc(var(--ui-sz) + 28px + var(--sa-b));
   }
   .leaflet-control{box-shadow:0 2px 8px rgba(0,0,0,.4)!important;border-radius:12px!important}
   .leaflet-control a{border-radius:12px!important}
 
-  /* GPS 버튼 우하단 */
+  /* 우하단 GPS: fixed로 뷰포트 하단 고정 */
   .gps{
-    position:absolute;z-index:1200;
-    right:calc(var(--gap)+var(--sa-r));
-    bottom:calc(20px + var(--sa-b));
-    width:54px;height:54px;border:none;border-radius:999px;background:#00b894;color:#fff;font-size:24px;display:grid;place-items:center;box-shadow:0 6px 14px rgba(0,0,0,.35);cursor:pointer
-  }
-
-  /* 토스트(아이콘 위) */
-  .toast{
-    position:absolute;z-index:1200;
-    right:calc(var(--gap)+var(--sa-r)); bottom:calc(90px + var(--sa-b));
-    background:rgba(0,0,0,.88);color:#fff;border-radius:10px;padding:10px 12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s
-  }
-  .toast.show{opacity:1}
-
-  /* 에러 오버레이 */
-  .err{
-    position:fixed;inset:calc(8px + var(--sa-t)) calc(8px + var(--sa-r)) auto calc(8px + var(--sa-l));
-    z-index:2000;background:#2b1d1d;color:#ffd7d7;border:1px solid #ff6b6b;border-radius:10px;padding:8px 10px;font-size:12px
-  }
-</style>
-</head>
-<body>
-<header class="appbar"><div class="title">수질측정망 지도</div></header>
-
-<main class="wrap">
-  <!-- 좌상단: 최소 패널 (필터 3종 + 리스트 이동) -->
-  <div class="panel" id="panel">
-    <button class="icon" aria-label="필터 아이콘">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" d="M4 6h10M18 6h2M10 6v12M4 12h6M18 12h2M6 12v6M4 18h14M20 18h0M14 18v-8"/></svg>
-    </button>
-    <div class="group">
-      <label><input type="checkbox" id="showSmall" checked>소규모</label>
-      <label><input type="checkbox" id="showStream" checked>하천</label>
-      <label><input type="checkbox" id="showStation" checked>측정소</label>
-    </div>
-    <select id="jumpList" aria-label="마커로 이동">
-      <option value="">리스트 이동…</option>
-    </select>
-  </div>
-
-  <div id="map" role="region" aria-label="지도"></div>
-
-  <button class="gps" id="gpsBtn" aria-label="내 위치">📍</button>
-  <div class="toast" id="toast">알림</div>
-</main>
-
-<!-- JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script>
-/* 전역 에러 표시 (하얀 화면 방지) */
-window.addEventListener('error', e=>{
-  const box=document.createElement('div'); box.className='err';
-  box.textContent='JS Error: ' + (e.message||e.error||'unknown');
-  document.body.appendChild(box);
-});
-
-/* 기본 지도 */
-const map = L.map('map', { zoomControl:false, preferCanvas:true });
-L.control.zoom({position:'topright'}).addTo(map);
-const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM & CARTO'}).addTo(map);
-const osm   = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'});
-const hot   = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{attribution:'© OSM HOT'});
-L.control.layers({"Carto":carto,"OSM":osm,"HOT":hot}, null, {position:'bottomright'}).addTo(map);
-
-/* 초기 위치(서울 시청) */
-map.setView([37.5665,126.9780], 11);
-
-/* 토스트 */
-const toast = (m,ms=1500)=>{ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),ms); };
-
-/* 데이터 소스 (기존 Gist) */
-const GIST = { user:'phattonly1', id:'9309e6ef4dd423e20628a28512edf12b', commit:'7452906127b85ad19f156d19de04141b49885411', file:'facilities.json' };
-const DATA_URLS = [
-  `https://gist.githubusercontent.com/${GIST.user}/${GIST.id}/raw/${GIST.commit}/${GIST.file}`,
-  `https://gistcdn.githack.com/${GIST.user}/${GIST.id}/raw/${GIST.commit}/${GIST.file}`,
-  `https://cdn.statically.io/gist/${GIST.user}/${GIST.id}/${GIST.commit}/${GIST.file}`,
-];
-
-/* 상태 */
-const jumpEl = document.getElementById('jumpList');
-const jumpIndex = new Map();
-const typeOn = { small:true, stream:true, station:true };
-const typeStyle = {
-  station:{ fill:'#0033cc', radius:8 },
-  small:  { fill:'#33bbff', radius:10 },
-  stream: { fill:'#3399ff', radius:12 },
-  default:{ fill:'#666',    radius:8 }
-};
-const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-const tipOpt = isMobile ? {permanent:false} : {permanent:true,className:'station-tooltip',direction:'top',offset:[0,-10]};
-
-let items = [];                 // { f, type, layer }
-const cluster = L.markerClusterGroup({ maxClusterRadius:40, showCoverageOnHover:false });
-
-/* 마커 생성 */
-function mkMarker(f){
-  const st = typeStyle[f.type] || typeStyle.default;
-  const m = L.circleMarker([+f.lat, +f.lng], {
-    radius: st.radius, color:'#000', weight:1,
-    fillColor: f.color || st.fill, fillOpacity:.9
-  }).bindTooltip(f.name, tipOpt);
-  m.bindPopup(`<b>${f.name}</b><br>${f.id?`ID: ${f.id}<br>`:''}유형: ${f.type||'unknown'}`);
-  return m;
-}
-
-/* 렌더 */
-function renderAll(){
-  cluster.clearLayers();
-  const filtered = items.filter(it => (typeOn[it.type] ?? true));
-  filtered.forEach(it => cluster.addLayer(it.layer));
-  if (!map.hasLayer(cluster)) map.addLayer(cluster);
-
-  // 리스트(가나다)
-  jumpIndex.clear();
-  jumpEl.innerHTML = '<option value="">리스트 이동…</option>';
-  [...filtered].sort((a,b)=> a.f.name.localeCompare(b.f.name, 'ko')).forEach((it,i)=>{
-    const o=document.createElement('option');
-    o.value = `${it.f.name}__${i}`;
-    o.textContent = it.f.name;
-    o.dataset.lat = it.f.lat; o.dataset.lng = it.f.lng;
-    jumpIndex.set(o.value, it.layer);
-    jumpEl.appendChild(o);
-  });
-
-  if (filtered.length){
-    const fg = L.featureGroup(filtered.map(x=>x.layer));
-    try{ map.fitBounds(fg.getBounds().pad(0.15), { animate:false }); }catch(e){}
-  }
-}
-
-/* 필터 이벤트 */
-['showSmall','showStream','showStation'].forEach(id=>{
-  document.getElementById(id).addEventListener('change', ()=>{
-    typeOn.small   = document.getElementById('showSmall').checked;
-    typeOn.stream  = document.getElementById('showStream').checked;
-    typeOn.station = document.getElementById('showStation').checked;
-    renderAll();
-  });
-});
-
-/* 리스트 이동 */
-jumpEl.addEventListener('change', e=>{
-  const v = e.target.value; if(!v) return;
-  const opt = e.target.selectedOptions[0];
-  const lat = +opt.dataset.lat, lng = +opt.dataset.lng;
-  map.flyTo([lat,lng], Math.max(map.getZoom(), 16), {duration:.45});
-  const lyr = jumpIndex.get(v); if(lyr && lyr.openPopup) setTimeout(()=>lyr.openPopup(), 480);
-});
-
-/* 데이터 로드(다중 CDN 폴백 + 관대한 파서) */
-async function loadFacilities(){
-  let lastErr=null;
-  for (const url of DATA_URLS){
-    try{
-      const r = await fetch(url, {cache:'no-store',credentials:'omit'});
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      const text = await r.text();
-      let json;
-      try{ json = JSON.parse(text); }
-      catch{ const s=text.indexOf('['), e=text.lastIndexOf(']'); json = JSON.parse(text.slice(s,e+1)); }
-      if(!Array.isArray(json)) throw new Error('bad json');
-
-      items = json.map(f=>({ f, type: f.type||'default', layer: mkMarker(f) }));
-      renderAll();
-      toast('✅ 데이터 로드 완료');
-      return;
-    }catch(err){ lastErr = err; }
-  }
-  console.warn(lastErr);
-  toast('❌ 데이터 로드 실패');
-}
-
-/* GPS */
-let me=null, watchId=null, tracking=false;
-document.getElementById('gpsBtn').addEventListener('click', ()=>{
-  const btn = document.getElementById('gpsBtn');
-  if (tracking){
-    navigator.geolocation?.clearWatch?.(watchId);
-    tracking=false; btn.textContent='📍';
-    if (me){ map.removeLayer(me); me=null; }
-    toast('🛑 추적 종료');
-    return;
-  }
-  if (!navigator.geolocation){ toast('⚠️ 위치 미지원'); return; }
-  watchId = navigator.geolocation.watchPosition(
-    pos=>{
-      const {latitude:lat, longitude:lng} = pos.coords;
-      const el = document.createElement('div');
-      el.style.cssText = 'width:16px;height:16px;border:3px solid #0ea5e9;background:#38bdf8;border-radius:999px;box-shadow:0 0 0 4px rgba(56,189,248,.25)';
-      const icon = L.divIcon({className:'',html:el,iconSize:[16,16],iconAnchor:[8,8]});
-      if(me) me.setLatLng([lat,lng]); else me = L.marker([lat,lng],{icon}).addTo(map).bindPopup('📍 내 위치');
-      map.flyTo([lat,lng], Math.max(map.getZoom(), 14), {duration:.4});
-    },
-    _=>{ toast('⚠️ 위치 권한 확인'); tracking=false; btn.textContent='📍'; },
-    { enableHighAccuracy:true, maximumAge:5000, timeout:10000 }
-  );
-  tracking=true; btn.textContent='🔵';
-  toast('📡 추적 시작');
-});
-
-/* 초기화 */
-loadFacilities();
-
-/* 주소창 높이 변화 대응 */
-addEventListener('resize', ()=> map.invalidateSize());
-addEventListener('load', ()=>{ setTimeout(()=> map.invalidateSize(), 0); setTimeout(()=> map.invalidateSize(), 200); });
-</script>
-</body>
-</html>
+    position:fixed; z-index:1200;
+    right: calc(var(--gap) + var(--sa-r));
+    bottom: calc(20px + var(--sa-b));
+    width: var(--ui-sz);
