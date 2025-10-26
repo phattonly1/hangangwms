@@ -6,6 +6,8 @@
 <title>수질측정망 지도</title>
 <link rel="icon" href="./assets/gongdan-mark.png" />
 <meta name="robots" content="noindex,nofollow,noarchive" />
+<meta name="theme-color" content="#f5f7fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b2239" media="(prefers-color-scheme: dark)">
 
 <!-- Leaflet & MarkerCluster -->
 <link rel="stylesheet"
@@ -26,6 +28,7 @@
   *{ box-sizing:border-box }
   html, body { height:100%; margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Pretendard,Arial; }
   body { background:#f5f7fb; color:#0b2239; }
+  @media (prefers-color-scheme: dark){ body{ background:#0b1622; color:#e6eef6; } }
 
   /* 상단 헤더 */
   .appbar{
@@ -33,6 +36,7 @@
     padding:0 16px; background:#fff; border-bottom:1px solid rgba(0,0,0,.06);
     position:sticky; top:0; z-index:1000;
   }
+  @media (prefers-color-scheme: dark){ .appbar{ background:#101b2a; border-color:rgba(255,255,255,.10);} }
   .logo-img{ width:44px; height:44px; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(0,0,0,.12)); }
   .title-text{ min-width:0; }
   .title-text h1{
@@ -57,9 +61,11 @@
     box-shadow:0 2px 8px rgba(0,0,0,0.2);
     display:inline-flex; flex-direction:column; gap:6px; font-size:14px;
   }
+  @media (prefers-color-scheme: dark){ .filter-panel{ background:rgba(16,27,42,.96); color:#e6eef6; box-shadow:0 2px 8px rgba(0,0,0,.5);} }
   .filter-panel h2{
     margin:0 0 6px; font-size:13px; font-weight:700; color:#365b7a;
   }
+  @media (prefers-color-scheme: dark){ .filter-panel h2{ color:#8aa7c4; } }
   label{ display:flex; align-items:center; gap:6px; white-space:nowrap; cursor:pointer; }
 
   .floating-btn{
@@ -88,6 +94,17 @@
     width:16px; height:16px; border:3px solid #0ea5e9; background:#38bdf8; border-radius:999px;
     box-shadow:0 0 0 4px rgba(56,189,248,.25);
   }
+
+  /* Gist 가이드 영역 */
+  .guide{ background:#fff; border-top:1px solid rgba(0,0,0,.06); }
+  @media (prefers-color-scheme: dark){ .guide{ background:#101b2a; border-color:rgba(255,255,255,.08);} }
+  .guide .inner{ max-width:1100px; margin:0 auto; padding:16px; }
+  .guide details{ border:1px solid rgba(0,0,0,.08); border-radius:12px; padding:10px 12px; background:rgba(255,255,255,.72); }
+  @media (prefers-color-scheme: dark){ .guide details{ background:rgba(16,27,42,.72); border-color:rgba(255,255,255,.10);} }
+  .guide summary{ cursor:pointer; font-weight:700; color:#365b7a; }
+  @media (prefers-color-scheme: dark){ .guide summary{ color:#8aa7c4; } }
+  .guide .note{ margin:8px 0 12px; color:#44607a; font-size:13px; }
+  @media (prefers-color-scheme: dark){ .guide .note{ color:#a3bed6; } }
 
   @media (max-width:420px){
     .logo-img{ width:40px; height:40px; }
@@ -121,6 +138,18 @@
     <button class="floating-btn gps-btn" id="gpsBtn" aria-label="내 위치 추적 전환">📍</button>
     <div class="toast" id="toast" role="status" aria-live="polite">📡 위치 기능</div>
   </main>
+
+  <!-- Gist 가이드: 요청하신 임베드 주소를 반영하여 하단에 펼침형 가이드로 표시 -->
+  <section class="guide" aria-labelledby="guide-title">
+    <div class="inner">
+      <details>
+        <summary id="guide-title">도움말 · 코드 가이드 (GitHub Gist)</summary>
+        <p class="note">아래 내용은 GitHub Gist 임베드입니다. 네트워크 정책에 따라 표시가 제한될 수 있습니다.</p>
+        <!-- 임베드 지시: 위치 바꾸려면 이 스크립트 블록을 원하는 위치로 이동 -->
+        <script src="https://gist.github.com/phattonly1/9309e6ef4dd423e20628a28512edf12b.js"></script>
+      </details>
+    </div>
+  </section>
 
 <script>
 /* ===== 기본 설정 ===== */
