@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>인벤토리 · 요청서 (item.html)</title>
+  <style>
+    :root{
+      --ink:#0b2239; --muted:#64748b; --bd:#e5e7eb; --panel:#ffffff; --panel-2:#f8fafc; --accent:#2563eb;
+      --ok:#16a34a; --warn:#eab308; --danger:#dc2626; --shadow:0 6px 24px rgba(2,6,23,.08);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; color:var(--ink); background:linear-gradient(180deg,#f9fafb,#eef2f7 50%,#eef2f7); font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Helvetica,Arial,sans-serif}
+    .appbar{position:sticky; top:0; z-index:5; backdrop-filter:saturate(1.2) blur(10px); background:rgba(255,255,255,.7); border-bottom:1px solid var(--bd)}
+    .appbar .inner{display:flex; gap:12px; align-items:center; padding:12px 16px; max-width:1200px; margin:0 auto}
+    .brand{display:flex; gap:10px; align-items:center; font-weight:700}
+    .brand .dot{width:12px; height:12px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.2)}
+    .tabs{margin-left:auto; display:flex; gap:6px}
+    .tab{border:1px solid var(--bd); background:var(--panel); padding:8px 12px; border-radius:999px; cursor:pointer}
+    .tab[aria-selected="true"]{background:var(--ink); color:#fff}
+
+    .wrap{max-width:1200px; margin:18px auto; padding:0 16px 48px}
+    .panel{background:var(--panel); border:1px solid var(--bd); border-radius:var(--radius); box-shadow:var(--shadow)}
+    .toolbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:12px; border-bottom:1px solid var(--bd); background:var(--panel-2); border-radius:var(--radius) var(--radius) 0 0}
+    .toolbar .spacer{flex:1}
+    .toolbar input[type="search"]{width:260px; max-width:100%; padding:10px 12px; border:1px solid var(--bd); border-radius:10px; background:#fff}
+    .btn{display:inline-flex; align-items:center; gap:8px; padding:9px 12px; border:1px solid var(--bd); border-radius:10px; background:#fff; cursor:pointer}
+    .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+    .btn.ghost{background:transparent}
+    .btn.warn{background:#fff7ed; border-color:#fed7aa}
+    .btn:disabled{opacity:.6; cursor:not-allowed}
+    .select, .number{padding:9px 10px; border:1px solid var(--bd); border-radius:10px; background:#fff}
+
+    .table{width:100%; border-collapse:separate; border-spacing:0}
+    .table th,.table td{padding:10px 12px; border-bottom:1px solid var(--bd); vertical-align:middle}
+    .table thead th{position:sticky; top:0; background:#fff; z-index:1}
+    .table tr:hover td{background:#fafafa}
+    .avatar{width:44px; height:44px; border-radius:10px; object-fit:cover; background:#eef2f7; border:1px solid var(--bd)}
+    .chip{display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid var(--bd); background:#fff}
+    .qty.low{color:#b45309}
+    .qty.zero{color:var(--danger); font-weight:700}
+    .qty.ok{color:var(--ok)}
+    .row-actions{display:flex; gap:8px}
+
+    .grid{display:grid; grid-template-columns:1fr 360px; gap:16px}
+    @media (max-width: 960px){ .grid{grid-template-columns:1fr} }
+
+    .pagination{display:flex; gap:8px; align-items:center; justify-content:flex-end; padding:12px}
+    .hidden{display:none}
+
+    /* Cards for mobile */
+    @media (max-width: 720px){
+      .table{display:none}
+      .cards{display:grid; gap:10px; padding:12px}
+      .card{border:1px solid var(--bd); border-radius:12px; background:#fff; padding:10px; display:grid; grid-template-columns:54px 1fr; gap:10px}
+      .card .row-actions{justify-content:flex-end}
+    }
+
+    .hint{font-size:12px; color:var(--muted)}
+    .danger{color:var(--danger)}
+    .ok{color:var(--ok)}
+    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#eef2f7; border:1px solid var(--bd); padding:2px 6px; border-radius:6px}
+
+    .dropzone{border:1px dashed var(--bd); border-radius:10px; padding:12px; text-align:center; color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header class="appbar" role="banner">
+    <div class="inner">
+      <div class="brand" aria-label="재고관리">
+        <span class="dot" aria-hidden="true"></span>
+        <span>item.html</span>
+      </div>
+      <nav class="tabs" role="tablist" aria-label="페이지 전환">
+        <button class="tab" role="tab" aria-selected="true" id="tab-inv" data-target="view-inventory">인벤토리</button>
+        <button class="tab" role="tab" aria-selected="false" id="tab-req" data-target="view-requests">요청서</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="app" aria-live="polite">
+    <!-- INVENTORY VIEW -->
+    <section id="view-inventory" class="panel" role="region" aria-label="인벤토리">
+      <div class="toolbar">
+        <input id="q" type="search" placeholder="검색: 물품명, 사용기기… (⌘/Ctrl + K)" aria-label="검색" />
+        <select id="filterDevice" class="select" aria-label="사용기기 필터">
+          <option value="">전체 기기</option>
+        </select>
+        <label class="chip"><input id="onlyLow" type="checkbox" /> 재고 임계치 이하</label>
+        <div class="spacer"></div>
+        <button id="btnAdd" class="btn">+ 새 물품</button>
+        <button id="btnImport" class="btn">가져오기</button>
+        <button id="btnExport" class="btn">내보내기</button>
+        <input id="fileImport" type="file" accept=".json,.csv,image/*" class="hidden" />
+      </div>
+
+      <!-- Desktop Table -->
+      <div style="overflow:auto; max-height: 60vh">
+        <table class="table" aria-label="재고 테이블">
+          <thead>
+            <tr>
+              <th style="width:64px">사진</th>
+              <th>물품명</th>
+              <th>사용기기</th>
+              <th style="width:120px">재고량</th>
+              <th style="width:140px">임계치</th>
+              <th style="width:220px">비고</th>
+              <th style="width:200px">작업</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+
+        <!-- Mobile Cards -->
+        <div class="cards" id="cards" aria-label="재고 카드 목록" hidden></div>
+      </div>
+
+      <div class="pagination">
+        <span class="hint" id="countInfo">0개</span>
+        <div class="spacer"></div>
+        <button class="btn" id="prev">이전</button>
+        <span class="chip" id="pageInfo">1 / 1</span>
+        <button class="btn" id="next">다음</button>
+        <select id="pageSize" class="select" aria-label="페이지 크기">
+          <option>20</option>
+          <option selected>30</option>
+          <option>50</option>
+          <option>100</option>
+        </select>
+      </div>
+
+      <div class="hint" style="padding: 8px 12px 16px">
+        사진 셀을 클릭하면 이미지를 교체할 수 있어요. 셀 편집은 더블클릭 → Enter로 저장. 모든 변경 사항은 자동 저장되며 <span class="kbd">localStorage</span> 및 <span class="kbd">postMessage</span>로 동기화돼요.
+        <button id="seedDemo" class="btn ghost">데모 120개 채우기</button>
+      </div>
+    </section>
+
+    <!-- REQUESTS VIEW -->
+    <section id="view-requests" class="panel hidden" role="region" aria-label="요청서">
+      <div class="grid">
+        <div>
+          <div class="toolbar">
+            <strong>요청서 작성</strong>
+            <div class="spacer"></div>
+            <button class="btn" id="btnImportReq">가져오기(JSON)</button>
+            <button class="btn" id="btnExportReq">내보내기(JSON)</button>
+          </div>
+          <div style="padding:12px">
+            <div id="reqList" class="cards" aria-label="요청 품목"></div>
+            <p class="hint">인벤토리에서 품목을 선택해 요청바구니에 담고 수량을 조정하세요.</p>
+          </div>
+        </div>
+        <aside class="panel" style="border:none; box-shadow:none">
+          <div class="toolbar"><strong>바구니</strong><div class="spacer"></div><button class="btn primary" id="btnCopyLink">링크 복사</button></div>
+          <div style="padding:12px">
+            <div id="cart"></div>
+            <hr style="border:none;border-top:1px solid var(--bd);margin:12px 0" />
+            <label>요청 사유</label>
+            <textarea id="reqNote" rows="4" style="width:100%; padding:10px; border:1px solid var(--bd); border-radius:10px"></textarea>
+            <div style="display:flex; gap:8px; margin-top:12px">
+              <button class="btn primary" id="btnSubmit">요청서 제출 (로컬)</button>
+              <button class="btn" id="btnClear">비우기</button>
+            </div>
+            <p class="hint">실제 전송 연동은 <span class="kbd">window.postMessage</span> 또는 REST API 연결 훅으로 구성했습니다.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <input type="file" id="pickImage" accept="image/*" class="hidden" />
+
+  <template id="rowTpl">
+    <tr>
+      <td><img class="avatar" alt="사진"/></td>
+      <td data-key="name" contenteditable="false"></td>
+      <td data-key="device" contenteditable="false"></td>
+      <td data-key="qty" contenteditable="false" style="text-align:right"></td>
+      <td data-key="threshold" contenteditable="false" style="text-align:right"></td>
+      <td data-key="memo" contenteditable="false"></td>
+      <td>
+        <div class="row-actions">
+          <button class="btn" data-act="edit">편집</button>
+          <button class="btn" data-act="toReq">요청담기</button>
+          <button class="btn warn" data-act="del">삭제</button>
+        </div>
+      </td>
+    </tr>
+  </template>
+
+  <template id="cardTpl">
+    <div class="card">
+      <img class="avatar" alt="사진"/>
+      <div>
+        <div style="display:flex; gap:8px; align-items:center; justify-content:space-between">
+          <strong data-key="name">품목</strong>
+          <span class="chip" data-key="device">기기</span>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center; margin:6px 0">
+          <span>재고: <b class="qty" data-key="qty">0</b></span>
+          <span class="hint">임계: <span data-key="threshold">0</span></span>
+        </div>
+        <div class="hint" data-key="memo">-</div>
+        <div class="row-actions" style="margin-top:8px">
+          <button class="btn" data-act="edit">편집</button>
+          <button class="btn" data-act="toReq">요청담기</button>
+          <button class="btn warn" data-act="del">삭제</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+  ;(() => {
+    const LS_KEY = 'inventory.v1';
+    const REQ_KEY = 'requests.v1';
+
+    /*** State ***/
+    let items = load(LS_KEY, []);
+    let cart = load(REQ_KEY, {list:[], note:''});
+    let page = 1; let pageSize = 30; let query = ''; let onlyLow = false; let deviceFilter = '';
+
+    /*** Shortcuts ***/
+    const $ = (s, el=document) => el.querySelector(s);
+    const $$ = (s, el=document) => Array.from(el.querySelectorAll(s));
+
+    /*** Elements ***/
+    const tbody = $('#tbody');
+    const cards = $('#cards');
+    const pageInfo = $('#pageInfo');
+    const countInfo = $('#countInfo');
+
+    /*** Utils ***/
+    function save(key, data){ localStorage.setItem(key, JSON.stringify(data)); }
+    function load(key, def){ try{ return JSON.parse(localStorage.getItem(key)) ?? def }catch{ return def } }
+    function uid(){ return Math.random().toString(36).slice(2,9) }
+    function toInt(x){ const n = parseInt(x,10); return Number.isFinite(n)? n: 0 }
+    function statusClass(q, t){ if(q <= 0) return 'zero'; if(q <= t) return 'low'; return 'ok' }
+    function sendBridge(){
+      try { window.parent?.postMessage({type:'inventoryUpdated', payload: items}, '*') } catch {}
+      document.dispatchEvent(new CustomEvent('inventory:changed', {detail: items}))
+    }
+    function updateDevicesFilterOptions(){
+      const sel = $('#filterDevice');
+      const set = new Set(items.map(i=>i.device).filter(Boolean));
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">전체 기기</option>' + Array.from(set).sort((a,b)=>a.localeCompare(b,'ko')).map(d=>`<option ${d===cur?'selected':''}>${d}</option>`).join('');
+    }
+
+    /*** Rendering ***/
+    function filtered(){
+      let arr = items.filter(i=>{
+        const q = query.trim().toLowerCase();
+        const okQ = !q || [i.name, i.device, i.memo].some(v=>String(v||'').toLowerCase().includes(q));
+        const okD = !deviceFilter || i.device===deviceFilter;
+        const okL = !onlyLow || (toInt(i.qty) <= toInt(i.threshold));
+        return okQ && okD && okL;
+      });
+      arr.sort((a,b)=> a.name.localeCompare(b.name,'ko'));
+      return arr;
+    }
+
+    function paginate(arr){
+      const start = (page-1) * pageSize;
+      return arr.slice(start, start + pageSize);
+    }
+
+    function render(){
+      const arr = filtered();
+      const pageArr = paginate(arr);
+      const total = arr.length;
+
+      // Desktop table
+      tbody.innerHTML = '';
+      for(const it of pageArr){
+        const tr = document.importNode($('#rowTpl').content, true);
+        const row = tr.querySelector('tr');
+        const img = tr.querySelector('img');
+        img.src = it.img || '';
+        img.dataset.id = it.id;
+        row.dataset.id = it.id;
+        row.querySelector('[data-key="name"]').textContent = it.name || '';
+        row.querySelector('[data-key="device"]').textContent = it.device || '';
+        const qtyEl = row.querySelector('[data-key="qty"]');
+        qtyEl.textContent = it.qty ?? 0;
+        qtyEl.className = 'qty ' + statusClass(toInt(it.qty), toInt(it.threshold||0));
+        row.querySelector('[data-key="threshold"]').textContent = it.threshold ?? 0;
+        row.querySelector('[data-key="memo"]').textContent = it.memo || '';
+        tbody.appendChild(tr);
+      }
+
+      // Mobile cards
+      const isMobile = matchMedia('(max-width:720px)').matches;
+      $('#cards').hidden = !isMobile;
+
+      if(isMobile){
+        cards.innerHTML = '';
+        for(const it of pageArr){
+          const el = document.importNode($('#cardTpl').content, true);
+          el.querySelector('img').src = it.img || '';
+          el.querySelector('[data-key="name"]').textContent = it.name || '';
+          el.querySelector('[data-key="device"]').textContent = it.device || '';
+          const qtyEl = el.querySelector('[data-key="qty"]');
+          qtyEl.textContent = it.qty ?? 0;
+          qtyEl.className = 'qty ' + statusClass(toInt(it.qty), toInt(it.threshold||0));
+          el.querySelector('[data-key="threshold"]').textContent = it.threshold ?? 0;
+          el.querySelector('[data-key="memo"]').textContent = it.memo || '';
+          cards.appendChild(el);
+        }
+      }
+
+      $('#pageInfo').textContent = `${page} / ${Math.max(1, Math.ceil(total/pageSize))}`;
+      $('#countInfo').textContent = `${total}개`;
+      $('#prev').disabled = page<=1; $('#next').disabled = page >= Math.ceil(total/pageSize);
+      updateDevicesFilterOptions();
+    }
+
+    function upsert(it){
+      const i = items.findIndex(x=>x.id===it.id);
+      if(i>=0) items[i] = {...items[i], ...it}; else items.unshift(it);
+      save(LS_KEY, items); sendBridge(); render();
+    }
+
+    /*** Handlers ***/
+    document.addEventListener('click', (e)=>{
+      const act = e.target.closest('[data-act]')?.dataset.act;
+      if(!act) return;
+      const tr = e.target.closest('tr');
+
+      if(act==='edit'){
+        // Toggle editable cells
+        const host = tr || e.target.closest('.card');
+        const keys = ['name','device','qty','threshold','memo'];
+        for(const k of keys){
+          const el = host.querySelector(`[data-key="${k}"]`);
+          if(!el) continue;
+          const ce = el.getAttribute('contenteditable') === 'true';
+          el.setAttribute('contenteditable', String(!ce));
+          if(!ce) el.focus();
+        }
+      }
+
+      if(act==='toReq'){
+        const id = tr?.dataset.id || e.target.closest('.card')?.querySelector('img')?.dataset.id;
+        const it = items.find(x=>x.id===id);
+        if(!it) return;
+        const ex = cart.list.find(x=>x.id===id);
+        if(ex) ex.count += 1; else cart.list.push({id, name:it.name, device:it.device, count:1});
+        save(REQ_KEY, cart); renderCart();
+      }
+
+      if(act==='del'){
+        const id = tr?.dataset.id;
+        if(!id) return;
+        items = items.filter(x=>x.id!==id);
+        save(LS_KEY, items); sendBridge(); render();
+      }
+    });
+
+    document.addEventListener('dblclick', (e)=>{
+      const cell = e.target.closest('[data-key]');
+      if(!cell) return;
+      cell.setAttribute('contenteditable','true');
+      cell.focus();
+    });
+
+    document.addEventListener('blur', (e)=>{
+      const cell = e.target.closest('[data-key]');
+      if(!cell) return;
+      const host = e.target.closest('tr');
+      const id = host?.dataset.id;
+      if(!id) return;
+      const key = cell.dataset.key;
+      const val = key==='qty' || key==='threshold' ? toInt(cell.textContent) : cell.textContent.trim();
+      upsert({id, [key]: val});
+    }, true);
+
+    // Replace image on click
+    $('#tbody').addEventListener('click', (e)=>{
+      const img = e.target.closest('img');
+      if(!img) return;
+      const id = img.dataset.id;
+      const input = $('#pickImage');
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if(!file) return;
+        const url = await fileToDataURL(file);
+        upsert({id, img: url});
+        input.value = '';
+      };
+      input.click();
+    });
+
+    function fileToDataURL(file){
+      return new Promise((res, rej)=>{
+        const fr = new FileReader();
+        fr.onload = () => res(fr.result);
+        fr.onerror = rej;
+        fr.readAsDataURL(file);
+      });
+    }
+
+    // Toolbar
+    $('#q').addEventListener('input', e=>{ query = e.target.value; page=1; render(); });
+    $('#filterDevice').addEventListener('change', e=>{ deviceFilter = e.target.value; page=1; render(); });
+    $('#onlyLow').addEventListener('change', e=>{ onlyLow = e.target.checked; page=1; render(); });
+
+    $('#prev').onclick = ()=>{ if(page>1){ page--; render(); } };
+    $('#next').onclick = ()=>{ page++; render(); };
+    $('#pageSize').onchange = (e)=>{ pageSize = toInt(e.target.value); page=1; render(); };
+
+    // CRUD: Add/import/export
+    $('#btnAdd').onclick = ()=>{
+      const it = { id: uid(), img:'', name:'새 품목', device:'', qty:0, threshold:0, memo:'' };
+      upsert(it);
+    };
+
+    $('#btnExport').onclick = ()=>{
+      const blob = new Blob([JSON.stringify(items,null,2)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'inventory.json'; a.click();
+    };
+
+    $('#btnImport').onclick = ()=> $('#fileImport').click();
+    $('#fileImport').onchange = async (e)=>{
+      const file = e.target.files?.[0]; if(!file) return;
+      if(file.type.startsWith('image/')){ // quick add with image
+        const url = await fileToDataURL(file);
+        upsert({ id: uid(), img:url, name:file.name.replace(/\.[^.]+$/, ''), device:'', qty:0, threshold:0, memo:'' });
+      } else {
+        const text = await file.text();
+        try{
+          const data = JSON.parse(text);
+          if(Array.isArray(data)){
+            items = data.map(x=>({ id: uid(), img:x.img||'', name:x.name||x.물품명||'', device:x.device||x.사용기기||'', qty:toInt(x.qty??x.재고량), threshold:toInt(x.threshold??x.임계치), memo:x.memo||x.비고||'' }));
+            save(LS_KEY, items); sendBridge(); render();
+          }
+        }catch{
+          alert('JSON 형식을 확인하세요.');
+        }
+      }
+      e.target.value='';
+    };
+
+    // Demo seeder
+    $('#seedDemo').onclick = ()=>{
+      const names = Array.from({length:120},(_,i)=>`데모 품목 ${String(i+1).padStart(3,'0')}`);
+      items = names.map((n,i)=>({ id: uid(), img:'', name:n, device: ['장치A','장치B','장치C'][i%3], qty: (i*3)%37, threshold: 5 + (i%4), memo:'' }));
+      save(LS_KEY, items); sendBridge(); page=1; render();
+    };
+
+    /*** Requests (cart) ***/
+    function renderCart(){
+      $('#cart').innerHTML = cart.list.map(it=>`
+        <div style="display:flex; gap:8px; align-items:center; justify-content:space-between; padding:6px 0">
+          <div><strong>${it.name}</strong> <span class="hint">/ ${it.device||'-'}</span></div>
+          <div style="display:flex; gap:6px; align-items:center">
+            <button class="btn" data-ctrl="minus" data-id="${it.id}">-</button>
+            <input class="number" data-ctrl="count" data-id="${it.id}" value="${it.count}" style="width:64px; text-align:right" />
+            <button class="btn" data-ctrl="plus" data-id="${it.id}">+</button>
+            <button class="btn warn" data-ctrl="rm" data-id="${it.id}">제거</button>
+          </div>
+        </div>
+      `).join('');
+      $('#reqNote').value = cart.note||'';
+    }
+
+    document.addEventListener('click', (e)=>{
+      const id = e.target.dataset.id;
+      const ctrl = e.target.dataset.ctrl;
+      if(!ctrl) return;
+      const ex = cart.list.find(x=>x.id===id);
+      if(!ex) return;
+      if(ctrl==='minus') ex.count = Math.max(1, ex.count-1);
+      if(ctrl==='plus') ex.count += 1;
+      if(ctrl==='rm') cart.list = cart.list.filter(x=>x.id!==id);
+      save(REQ_KEY, cart); renderCart();
+    });
+
+    $('#reqNote').addEventListener('input', (e)=>{ cart.note = e.target.value; save(REQ_KEY, cart); });
+
+    $('#btnExportReq').onclick = ()=>{
+      const blob = new Blob([JSON.stringify(cart,null,2)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'request.json'; a.click();
+    };
+
+    $('#btnImportReq').onclick = ()=>{
+      const inp = document.createElement('input'); inp.type='file'; inp.accept='.json';
+      inp.onchange = async () => {
+        const file = inp.files?.[0]; if(!file) return; const text = await file.text();
+        try{ cart = JSON.parse(text); save(REQ_KEY, cart); renderCart(); }catch{ alert('JSON 형식을 확인하세요.'); }
+      };
+      inp.click();
+    };
+
+    $('#btnCopyLink').onclick = ()=>{
+      const payload = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(cart)))));
+      const url = location.origin + location.pathname + `#req=` + payload;
+      navigator.clipboard.writeText(url).then(()=> alert('링크가 복사되었습니다.'));
+    };
+
+    $('#btnClear').onclick = ()=>{ cart = {list:[], note:''}; save(REQ_KEY, cart); renderCart(); };
+
+    $('#btnSubmit').onclick = ()=>{
+      try{
+        window.parent?.postMessage({type:'request:submit', payload: cart}, '*');
+        alert('로컬 제출 완료. 상위 페이지로 메시지를 보냈습니다.');
+      }catch{ alert('제출 중 오류. postMessage 권한을 확인하세요.'); }
+    };
+
+    /*** Init ***/
+    function restoreFromHash(){
+      const m = location.hash.match(/#req=([^&]+)/);
+      if(!m) return;
+      try{
+        const data = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));
+        if(data?.list) { cart = data; save(REQ_KEY, cart); }
+      }catch{}
+    }
+
+    restoreFromHash();
+    render();
+    renderCart();
+
+    // Keyboard search shortcut
+    window.addEventListener('keydown', (e)=>{
+      if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k') { e.preventDefault(); $('#q').focus(); }
+    });
+  })();
+  </script>
+</body>
+</html>
