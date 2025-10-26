@@ -130,7 +130,13 @@
       <label><input type="checkbox" id="showSmall" checked> 소규모</label>
       <label><input type="checkbox" id="showStream" checked> 하천</label>
       <label><input type="checkbox" id="showStation" checked> 측정소</label>
-      <button id="fitBtn" style="margin-top:6px;border:1px solid #d0d7e2;background:#f7fbff;border-radius:8px;padding:6px 10px;cursor:pointer">지도 맞추기</button>
+
+      <!-- ▼ 새 드롭다운: 리스트 -->
+      <label style="margin-top:4px; font-weight:700; color:#365b7a;">리스트</label>
+      <select id="jumpList" aria-label="마커 리스트로 이동"
+        style="margin-top:4px;border:1px solid #d0d7e2;background:#fff;border-radius:8px;padding:6px 10px;min-width:220px">
+        <option value="">선택하세요…</option>
+      </select>
     </div>
 
     <div id="map" role="region" aria-label="수질측정망 지도"></div>
@@ -139,13 +145,12 @@
     <div class="toast" id="toast" role="status" aria-live="polite">📡 위치 기능</div>
   </main>
 
-  <!-- Gist 가이드: 요청하신 임베드 주소를 반영하여 하단에 펼침형 가이드로 표시 -->
+  <!-- Gist 가이드 (필요 시 접어서 보기) -->
   <section class="guide" aria-labelledby="guide-title">
     <div class="inner">
       <details>
         <summary id="guide-title">도움말 · 코드 가이드 (GitHub Gist)</summary>
-        <p class="note">아래 내용은 GitHub Gist 임베드입니다. 네트워크 정책에 따라 표시가 제한될 수 있습니다.</p>
-        <!-- 임베드 지시: 위치 바꾸려면 이 스크립트 블록을 원하는 위치로 이동 -->
+        <p class="note">아래 내용은 GitHub Gist 임베드입니다.</p>
         <script src="https://gist.github.com/phattonly1/9309e6ef4dd423e20628a28512edf12b.js"></script>
       </details>
     </div>
@@ -157,8 +162,7 @@
 const INITIAL_CENTER = [37.4106329, 127.1255116];
 const INITIAL_ZOOM   = 16;
 
-/* 민감 데이터는 JS에 하드코딩하지 않고, 보호된 경로에서 불러온다. (_headers로 /data/* 보호) */
-// Gist 원본 + 미러 (CORS/네트워크 이슈 대비)
+/* Gist 원본 + 미러 (CORS/네트워크 이슈 대비) */
 const GIST_INFO = { user:'phattonly1', id:'9309e6ef4dd423e20628a28512edf12b', commit:'7452906127b85ad19f156d19de04141b49885411', file:'facilities.json' };
 const DATA_URLS = [
   `https://gist.githubusercontent.com/${GIST_INFO.user}/${GIST_INFO.id}/raw/${GIST_INFO.commit}/${GIST_INFO.file}`,
@@ -186,7 +190,7 @@ map.setView(initFromHash ? [initFromHash.lat, initFromHash.lng] : INITIAL_CENTER
 
 L.control.zoom({position:'topright'}).addTo(map);
 
-/* 베이스 타일 (add 후 size 재계산 2회) */
+/* 베이스 타일 */
 const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM & CARTO'}).addTo(map);
 const osm   = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'});
 const hot   = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{attribution:'© OSM HOT'});
@@ -207,7 +211,7 @@ let meMarker=null, watchId=null, tracking=false;
 
 /* 타입별 스타일 */
 const typeStyle = {
-  station:{ color:'#ff6600', fill:'#ff6600', radius:8 },
+  station:{ color:'#ff6600', fill:'#0033cc', radius:8 },
   small:  { color:'#33bbff', fill:'#33bbff', radius:10 },
   stream: { color:'#3399ff', fill:'#3399ff', radius:12 },
   default:{ color:'#666',    fill:'#666',    radius:8 }
@@ -218,6 +222,41 @@ const tooltipOpt = isMobile ? {permanent:false} : {permanent:true,className:'sta
 /* 유틸 */
 const $ = sel => document.querySelector(sel);
 const toast = (msg, ms=2200)=>{ const el=$("#toast"); el.textContent=msg; el.classList.add("show"); setTimeout(()=> el.classList.remove("show"), ms); };
+
+/* ▼ 드롭다운 */
+const jumpEl = $("#jumpList");
+let jumpIndex = new Map();
+function rebuildJumpList(list){
+  if (!jumpEl) return;
+  jumpIndex.clear();
+  jumpEl.innerHTML = '';
+  const first = document.createElement('option');
+  first.value = '';
+  first.textContent = '선택하세요…';
+  jumpEl.appendChild(first);
+  list.forEach((it, i) => {
+    const { f } = it;
+    const opt = document.createElement('option');
+    const val = `${f.name}__${i}`;
+    opt.value = val;
+    opt.textContent = f.name;
+    opt.dataset.lat = f.lat;
+    opt.dataset.lng = f.lng;
+    jumpIndex.set(val, it.layer);
+    jumpEl.appendChild(opt);
+  });
+}
+if (jumpEl){
+  jumpEl.addEventListener('change', (e)=>{
+    const val = e.target.value;
+    if (!val) return;
+    const opt = jumpEl.selectedOptions[0];
+    const lat = Number(opt.dataset.lat), lng = Number(opt.dataset.lng);
+    map.flyTo([lat, lng], Math.max(map.getZoom(), 16), { duration:0.5 });
+    const lyr = jumpIndex.get(val);
+    if (lyr){ setTimeout(()=> lyr.openPopup && lyr.openPopup(), 520); }
+  });
+}
 
 /* 필터 로드/저장 */
 function loadFilters(){
@@ -237,18 +276,16 @@ function saveFilters(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(v)); }catch(e){}
 }
 
-/* 마커 생성 */
+/* 마커 생성 (color 필드 우선) */
 function makeMarker(f){
-  // 색상 우선순위: 항목 color > 유형 기본색
   const base = typeStyle[f.type] || typeStyle.default;
   const fill = f.color || base.fill;
-  const stroke = '#000';
   const m = L.circleMarker([Number(f.lat), Number(f.lng)], {
     radius: base.radius || 8,
-    color: stroke,
-    weight: 1,
+    color:'#000',
+    weight:1,
     fillColor: fill,
-    fillOpacity: 0.9
+    fillOpacity:0.9
   }).bindTooltip(f.name, tooltipOpt);
   if (f.popupHtml){
     m.bindPopup(f.popupHtml, { maxWidth: 260 });
@@ -275,6 +312,9 @@ function renderAll(){
   filtered.forEach(it => cluster.addLayer(it.layer));
   map.addLayer(cluster);
 
+  // 드롭다운 재구성
+  rebuildJumpList(filtered);
+
   if (filtered.length){
     const g = L.featureGroup(filtered.map(it=>it.layer));
     try{ map.fitBounds(g.getBounds().pad(0.12), { animate:false }); }catch(e){}
@@ -289,7 +329,7 @@ function onFilterChange(){
   filterTimer = setTimeout(renderAll, 80);
 }
 
-/* 데이터 로드 */
+/* 데이터 로드 (여러 소스 폴백 + JSON 파서 보강) */
 async function loadFacilities(){
   const ctrl = new AbortController();
   const t = setTimeout(()=> ctrl.abort(), 12000); // 12s 타임아웃
@@ -300,30 +340,30 @@ async function loadFacilities(){
         const res = await fetch(url, { mode:'cors', cache:'no-store', credentials:'omit', referrerPolicy:'no-referrer', signal: ctrl.signal, headers:{ 'Accept':'application/json' } });
         if (!res.ok){ lastErr = new Error(`HTTP ${res.status} @ ${new URL(url).host}`); continue; }
         const text = await res.text();
-let json;
-try { json = JSON.parse(text); }
-catch(parseErr){
-  // 방어적으로 페이지 HTML/주석 등 섞인 경우를 정리: 첫 '['부터 마지막 ']'까지 추출 시도
-  const start = text.indexOf('[');
-  const end = text.lastIndexOf(']');
-  if (start !== -1 && end !== -1 && end > start){
-    try { json = JSON.parse(text.slice(start, end + 1)); }
-    catch(inner){ throw new Error(`JSON 파싱 오류 @ ${new URL(url).host}`); }
-  } else {
-    throw new Error(`JSON 파싱 오류 @ ${new URL(url).host}`);
-  }
-}
-if (!Array.isArray(json)) { lastErr = new Error(`JSON 루트가 배열이 아님 @ ${new URL(url).host}`); continue; }
-        // 스키마 최소 검증
-        // 스키마 최소 검증 (lat/lng이 숫자 또는 숫자문자열이어도 허용)
-const ok = json.every(o =>
-  o && typeof o.name === 'string' &&
-  o.lat !== undefined && o.lng !== undefined &&
-  !Number.isNaN(Number(o.lat)) && !Number.isNaN(Number(o.lng))
-);
+        let json;
+        try { json = JSON.parse(text); }
+        catch(parseErr){
+          // 페이지 부가 텍스트가 섞인 경우: 첫 '[' ~ 마지막 ']' 잘라 재시도
+          const start = text.indexOf('[');
+          const end = text.lastIndexOf(']');
+          if (start !== -1 && end !== -1 && end > start){
+            try { json = JSON.parse(text.slice(start, end + 1)); }
+            catch(inner){ throw new Error(`JSON 파싱 오류 @ ${new URL(url).host}`); }
+          } else {
+            throw new Error(`JSON 파싱 오류 @ ${new URL(url).host}`);
+          }
+        }
+        // 스키마 최소 검증 (name/lat/lng)
+        const ok = json.every(o =>
+          o && typeof o.name === 'string' &&
+          o.lat !== undefined && o.lng !== undefined &&
+          !Number.isNaN(Number(o.lat)) && !Number.isNaN(Number(o.lng))
+        );
         if (!ok){ lastErr = new Error(`필수 필드 누락 @ ${new URL(url).host}`); continue; }
+
         facilities = json;
-        items = facilities.map(f => ({ layer: makeMarker(f), type: f.type || 'default' }));
+        // ▼ f(원본)도 보존해서 드롭다운에서 좌표/레이어 접근 용이
+        items = facilities.map(f => ({ f, layer: makeMarker(f), type: f.type || "default" }));
         renderAll();
         toast(`마커 ${facilities.length}건 로드됨 (${new URL(url).host})`);
         console.info('[WMS] loaded from', url);
@@ -383,16 +423,6 @@ map.on("moveend zoomend", ()=> writeHash(map.getZoom(), map.getCenter()));
 $("#showSmall").addEventListener("change", onFilterChange);
 $("#showStream").addEventListener("change", onFilterChange);
 $("#showStation").addEventListener("change", onFilterChange);
-$("#fitBtn").addEventListener("click", ()=> {
-  const layers = cluster.getLayers();
-  if (layers.length){
-    const g = L.featureGroup(layers);
-    try{ map.fitBounds(g.getBounds().pad(0.12)); }catch(e){}
-  } else {
-    map.setView(INITIAL_CENTER, INITIAL_ZOOM);
-  }
-});
-$("#gpsBtn").addEventListener("click", toggleTracking);
 
 /* 초기화 */
 loadFilters();
