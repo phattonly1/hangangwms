@@ -62,7 +62,6 @@
       .hero{ background: linear-gradient(135deg, rgba(16,27,42,.86), rgba(16,27,42,.72)); }
     }
 
-    /* 헤더: 로고 + 제목 한 줄 유지 */
     .title{ display:grid; grid-template-columns:auto 1fr; align-items:center; column-gap:14px; }
     .logo-img{ width:52px; height:52px; object-fit:contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.15)); }
     .title-text{ min-width:0; }
@@ -71,7 +70,6 @@
     @media (max-width: 420px){ .logo-img{ width:44px; height:44px; } }
     @media (max-width: 340px){ .logo-img{ width:40px; height:40px; } .title-text h1{ font-size: clamp(16px, 5.5vw, 28px); } }
 
-    /* 카드 그리드 */
     .grid{ margin-top:28px; display:grid; gap:16px; grid-template-columns: repeat( auto-fit, minmax(240px,1fr) ); padding:0; list-style:none; }
     .card{ background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:18px; text-decoration:none; color:inherit; box-shadow: var(--shadow-sm); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background-color .18s ease; position:relative; overflow:hidden; display:block; }
     .card:hover{ transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--ring); }
@@ -82,13 +80,11 @@
     .card p{ margin:0; color:#44607a; font-size:14px; }
     @media (prefers-color-scheme: dark){ .card p{ color:#a3bed6; } }
 
-    /* 모션 축소 환경에서 애니메이션 최소화 */
     @media (prefers-reduced-motion: reduce){
       .card{ transition:none }
       .card:hover{ transform:none }
     }
 
-    /* 푸터 */
     .footer{margin-top:22px; text-align:center; color:#44607a; font-size:12px; opacity:.9}
     @media (prefers-color-scheme: dark){ .footer{ color:#a3bed6; } }
   </style>
@@ -100,11 +96,10 @@
         <img class="logo-img" src="./assets/gongdan-mark.png" alt="공단 마크" width="52" height="52" decoding="async" fetchpriority="high"/>
         <div class="title-text">
           <h1 id="title">한강수계 수질측정망</h1>
-          <p class="sub">대시보드에서 항목을 선택해 지도를 열거나, 소모품 요청 현황/문서를 확인하세요.</p>
+          <p class="sub">대시보드에서 항목을 선택해 지도를 열거나, 소모품 요청/인벤토리를 관리하세요.</p>
         </div>
       </header>
 
-      <!-- 의미론적 리스트 마크업 (접근성 + 스크린리더에 유리) -->
       <ul class="grid" aria-label="대시보드 기능 목록">
         <li>
           <a class="card" href="./map.html" aria-label="지도 열기">
@@ -114,11 +109,12 @@
           </a>
         </li>
 
+        <!-- 변경: request.html → item.html -->
         <li>
-          <a class="card" href="./request.html" aria-label="요청 현황">
-            <div class="icon" aria-hidden="true">📥</div>
-            <h3>요청 현황</h3>
-            <p id="desc-req">소모품 요청 폼 & 실시간 반영 현황을 한 곳에서 확인합니다.</p>
+          <a class="card" href="./item.html" aria-label="인벤토리 · 요청서">
+            <div class="icon" aria-hidden="true">📦</div>
+            <h3>인벤토리 · 요청서</h3>
+            <p id="desc-req">박스히어로 스타일 재고 관리(사진/물품명/사용기기/재고량)와 요청서 연동을 제공합니다.</p>
           </a>
         </li>
 
