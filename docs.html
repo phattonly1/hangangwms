@@ -1,32 +1,101 @@
- <body>
- 
-     <h1>메인 페이지</h1>
-    <input type="text" id="searchInput" placeholder="문서 내용 검색..." style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-    
-     <details>
-         <summary>첫 번째 토글 제목</summary>
-         <div class="toggle-content">
-             <p>세 번째 토글에 대한 설명입니다. 필요한 만큼 토글을 추가하여 문서를 구조화할 수 있습니다.</p>
-         </div>
-     </details>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 문서 검색 (JSON 연동)</title>
+    <style>
+        /* 스타일은 이전과 동일합니다 */
+        body { font-family: 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; color: #333; }
+        h1 { text-align: center; color: #444; }
+        #searchInput { width: 100%; padding: 15px; margin-bottom: 30px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; transition: border-color 0.3s; }
+        #searchInput:focus { border-color: #4CAF50; outline: none; }
+        details { background-color: white; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #eee; }
+        summary { padding: 15px; cursor: pointer; font-weight: bold; background-color: #fff; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+        summary::after { content: '▼'; font-size: 12px; color: #888; transition: transform 0.3s; }
+        details[open] summary::after { transform: rotate(180deg); }
+        .toggle-content { padding: 15px; border-top: 1px solid #eee; background-color: #fafafa; line-height: 1.6; color: #555; }
+        .highlight { background-color: #fff176; font-weight: bold; border-radius: 2px; padding: 0 2px; }
+        #noResult { text-align: center; color: #888; margin-top: 20px; display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>📄 스마트 문서함 (JSON)</h1>
+    <input type="text" id="searchInput" placeholder="찾고 싶은 키워드를 입력하세요...">
+    <div id="listContainer">불러오는 중...</div>
+    <div id="noResult">검색 결과가 없습니다.</div>
 
     <script>
-        document.getElementById('searchInput').addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const detailsElements = document.querySelectorAll('details');
+        // 데이터를 저장할 전역 변수
+        let docData = [];
 
-            detailsElements.forEach(function(details) {
-                const summaryText = details.querySelector('summary').textContent.toLowerCase();
-                const contentText = details.querySelector('.toggle-content').textContent.toLowerCase();
-                
-                if (summaryText.includes(searchTerm) || contentText.includes(searchTerm)) {
-                    details.style.display = '';
-                } else {
-                    details.style.display = 'none';
+        const listContainer = document.getElementById('listContainer');
+        const noResult = document.getElementById('noResult');
+
+        // ✨ 핵심 변경: data.json 파일을 불러옵니다
+        fetch('data.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답에 문제가 있습니다.');
+                }
+                return response.json(); // 텍스트를 JSON 객체로 변환
+            })
+            .then(data => {
+                docData = data; // 받아온 데이터를 변수에 저장
+                renderList(docData, ''); // 화면에 그리기
+            })
+            .catch(error => {
+                console.error('데이터를 가져오는데 실패했습니다:', error);
+                listContainer.innerHTML = '<p style="color:red; text-align:center;">데이터를 불러올 수 없습니다.<br>로컬 서버(Live Server) 환경인지 확인해주세요.</p>';
+            });
+
+        // 검색 이벤트 리스너
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.trim();
+            renderList(docData, searchTerm);
+        });
+
+        // 목록 그리기 함수 (이전과 동일)
+        function renderList(data, keyword) {
+            listContainer.innerHTML = '';
+            let count = 0;
+            const lowerKeyword = keyword.toLowerCase();
+
+            data.forEach(item => {
+                const matchTitle = item.title.toLowerCase().includes(lowerKeyword);
+                const matchContent = item.content.toLowerCase().includes(lowerKeyword);
+
+                if (matchTitle || matchContent) {
+                    count++;
+                    let displayTitle = item.title;
+                    let displayContent = item.content;
+                    let isOpen = false;
+
+                    if (keyword !== '') {
+                        isOpen = true;
+                        displayTitle = highlightText(item.title, keyword);
+                        displayContent = highlightText(item.content, keyword);
+                    }
+
+                    const details = document.createElement('details');
+                    if(isOpen) details.open = true;
+
+                    details.innerHTML = `
+                        <summary>${displayTitle}</summary>
+                        <div class="toggle-content">${displayContent}</div>
+                    `;
+                    listContainer.appendChild(details);
                 }
             });
-        });
+            noResult.style.display = count === 0 ? 'block' : 'none';
+        }
+
+        function highlightText(text, keyword) {
+            const regex = new RegExp(`(${keyword})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
     </script>
- 
- </body>
- </html>
+
+</body>
+</html>
