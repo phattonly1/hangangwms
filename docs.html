@@ -3,92 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>스마트 문서 검색 (JSON 연동)</title>
+    <title>스마트 문서 검색 (다중 토글)</title>
     <style>
-        /* 스타일은 이전과 동일합니다 */
         body { font-family: 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; color: #333; }
         h1 { text-align: center; color: #444; }
-        #searchInput { width: 100%; padding: 15px; margin-bottom: 30px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; transition: border-color 0.3s; }
+        #searchInput { width: 100%; padding: 15px; margin-bottom: 30px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         #searchInput:focus { border-color: #4CAF50; outline: none; }
-        details { background-color: white; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #eee; }
-        summary { padding: 15px; cursor: pointer; font-weight: bold; background-color: #fff; list-style: none; display: flex; justify-content: space-between; align-items: center; }
-        summary::after { content: '▼'; font-size: 12px; color: #888; transition: transform 0.3s; }
-        details[open] summary::after { transform: rotate(180deg); }
-        .toggle-content { padding: 15px; border-top: 1px solid #eee; background-color: #fafafa; line-height: 1.6; color: #555; }
-        .highlight { background-color: #fff176; font-weight: bold; border-radius: 2px; padding: 0 2px; }
+        
+        /* 토글 스타일 */
+        details { background-color: white; margin-bottom: 8px; border-radius: 8px; border: 1px solid #eee; overflow: hidden; }
+        summary { padding: 12px 15px; cursor: pointer; font-weight: 600; background-color: #fff; list-style: none; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+        summary:hover { background-color: #f0f8ff; }
+        summary::after { content: '▼'; font-size: 12px; color: #999; transition: transform 0.3s; }
+        details[open] > summary::after { transform: rotate(180deg); }
+        
+        /* 내용 및 하위 목록 스타일 */
+        .content-box { padding: 15px; background-color: #fafafa; border-top: 1px solid #eee; line-height: 1.6; color: #555; }
+        
+        /* ✨ 들여쓰기 핵심 CSS: 하위 details는 왼쪽 여백을 줌 */
+        .sub-list { border-top: 1px solid #eee; background-color: #fcfcfc; padding: 10px 0 10px 20px; } 
+        
+        .highlight { background-color: #fff176; font-weight: bold; border-radius: 2px; }
         #noResult { text-align: center; color: #888; margin-top: 20px; display: none; }
     </style>
 </head>
 <body>
 
-    <h1>📄 스마트 문서함 (JSON)</h1>
+    <h1>🗂️ 다중 계층 문서함</h1>
     <input type="text" id="searchInput" placeholder="찾고 싶은 키워드를 입력하세요...">
     <div id="listContainer">불러오는 중...</div>
     <div id="noResult">검색 결과가 없습니다.</div>
 
     <script>
-        // 데이터를 저장할 전역 변수
         let docData = [];
-
         const listContainer = document.getElementById('listContainer');
         const noResult = document.getElementById('noResult');
 
-        // ✨ 핵심 변경: data.json 파일을 불러옵니다
+        // 데이터 불러오기
         fetch('data.json')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('네트워크 응답에 문제가 있습니다.');
-                }
-                return response.json(); // 텍스트를 JSON 객체로 변환
-            })
+            .then(response => response.json())
             .then(data => {
-                docData = data; // 받아온 데이터를 변수에 저장
-                renderList(docData, ''); // 화면에 그리기
+                docData = data;
+                renderTree(); // 초기 렌더링
             })
             .catch(error => {
-                console.error('데이터를 가져오는데 실패했습니다:', error);
-                listContainer.innerHTML = '<p style="color:red; text-align:center;">데이터를 불러올 수 없습니다.<br>로컬 서버(Live Server) 환경인지 확인해주세요.</p>';
+                console.error('Error:', error);
+                listContainer.innerHTML = '데이터 로드 실패 (Live Server 확인 필요)';
             });
 
-        // 검색 이벤트 리스너
+        // 검색 이벤트
         document.getElementById('searchInput').addEventListener('input', function() {
-            const searchTerm = this.value.trim();
-            renderList(docData, searchTerm);
+            renderTree(this.value.trim());
         });
 
-        // 목록 그리기 함수 (이전과 동일)
-        function renderList(data, keyword) {
-            listContainer.innerHTML = '';
-            let count = 0;
-            const lowerKeyword = keyword.toLowerCase();
+        // ✨ 핵심: 재귀적으로 트리를 그리는 함수
+        function buildTreeHTML(items, keyword) {
+            let html = '';
+            let hasMatchInLevel = false; // 현재 레벨이나 하위에 매칭되는 게 있는지
 
-            data.forEach(item => {
-                const matchTitle = item.title.toLowerCase().includes(lowerKeyword);
-                const matchContent = item.content.toLowerCase().includes(lowerKeyword);
+            items.forEach(item => {
+                const lowerKeyword = keyword.toLowerCase();
+                
+                // 1. 내 제목이나 내용이 매칭되는지 확인
+                const isTitleMatch = item.title.toLowerCase().includes(lowerKeyword);
+                const isContentMatch = item.content && item.content.toLowerCase().includes(lowerKeyword);
+                
+                // 2. 자식 요소 재귀 호출 (하위 목록 만들기)
+                let childrenResult = { html: '', hasMatch: false };
+                if (item.children) {
+                    childrenResult = buildTreeHTML(item.children, keyword);
+                }
 
-                if (matchTitle || matchContent) {
-                    count++;
-                    let displayTitle = item.title;
-                    let displayContent = item.content;
-                    let isOpen = false;
+                // 3. 보여줄지 결정 (검색어가 없거나, 내가 매칭되거나, 자식 중에 매칭된 게 있을 때)
+                if (keyword === '' || isTitleMatch || isContentMatch || childrenResult.hasMatch) {
+                    hasMatchInLevel = true;
+                    
+                    // 검색어 강조 (하이라이트)
+                    let displayTitle = keyword ? highlightText(item.title, keyword) : item.title;
+                    
+                    // 열림 상태 결정: 검색어가 있고 (하위가 매칭됐거나 내가 매칭됐을 때)
+                    const isOpen = (keyword !== '' && (childrenResult.hasMatch || isTitleMatch || isContentMatch)) ? 'open' : '';
 
-                    if (keyword !== '') {
-                        isOpen = true;
-                        displayTitle = highlightText(item.title, keyword);
-                        displayContent = highlightText(item.content, keyword);
+                    html += `<details ${isOpen}>`;
+                    html += `<summary>${displayTitle}</summary>`;
+                    
+                    // 내용이 있으면 출력
+                    if (item.content) {
+                        let displayContent = keyword ? highlightText(item.content, keyword) : item.content;
+                        html += `<div class="content-box">${displayContent}</div>`;
                     }
-
-                    const details = document.createElement('details');
-                    if(isOpen) details.open = true;
-
-                    details.innerHTML = `
-                        <summary>${displayTitle}</summary>
-                        <div class="toggle-content">${displayContent}</div>
-                    `;
-                    listContainer.appendChild(details);
+                    
+                    // 자식이 있으면 출력 (재귀 결과물 삽입)
+                    if (item.children) {
+                        html += `<div class="sub-list">${childrenResult.html}</div>`;
+                    }
+                    
+                    html += `</details>`;
                 }
             });
-            noResult.style.display = count === 0 ? 'block' : 'none';
+
+            return { html, hasMatch: hasMatchInLevel };
+        }
+
+        // 화면에 그리는 메인 함수
+        function renderTree(keyword = '') {
+            const result = buildTreeHTML(docData, keyword);
+            listContainer.innerHTML = result.html;
+            noResult.style.display = (result.html === '') ? 'block' : 'none';
         }
 
         function highlightText(text, keyword) {
@@ -96,6 +117,5 @@
             return text.replace(regex, '<span class="highlight">$1</span>');
         }
     </script>
-
 </body>
 </html>
