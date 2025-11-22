@@ -1,78 +1,32 @@
-+<!DOCTYPE html>
-+<html lang="ko">
-+<head>
-+    <meta charset="UTF-8">
-+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-+    <title>문서 페이지</title>
-+    <style>
-+        body {
-+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-+            line-height: 1.6;
-+            color: #333;
-+            max-width: 800px;
-+            margin: 40px auto;
-+            padding: 0 20px;
-+            background-color: #f9f9f9;
-+        }
-+
-+        h1 {
-+            font-size: 2.5em;
-+            border-bottom: 2px solid #eee;
-+            padding-bottom: 10px;
-+            margin-bottom: 30px;
-+        }
-+
-+        details {
-+            background: #fff;
-+            border-radius: 8px;
-+            margin-bottom: 10px;
-+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-+            border: 1px solid #e0e0e0;
-+        }
-+
-+        summary {
-+            padding: 16px;
-+            font-weight: 600;
-+            cursor: pointer;
-+            outline: none;
-+            list-style-position: inside; /* 기본 화살표를 안쪽으로 */
-+        }
-+
-+        .toggle-content {
-+            padding: 0 16px 16px 40px; /* 요약 텍스트와 맞추기 위한 들여쓰기 */
-+            border-top: 1px solid #eee;
-+        }
-+
-+    </style>
-+</head>
-+<body>
-+
-+    <h1>문서 페이지</h1>
-+
-+    <details>
-+        <summary>첫 번째 토글 제목</summary>
-+        <div class="toggle-content">
-+            <p>여기에 첫 번째 토글에 대한 내용을 작성합니다. 이 부분은 숨겨져 있다가 제목을 클릭하면 나타납니다.</p>
-+        </div>
-+    </details>
-+
-+    <details open> <!-- open 속성을 추가하면 페이지 로드 시 펼쳐진 상태로 보입니다. -->
-+        <summary>두 번째 토글 제목 (기본으로 열림)</summary>
-+        <div class="toggle-content">
-+            <p>두 번째 토글 내용입니다. <code>open</code> 속성을 사용하면 처음부터 내용이 보여집니다.</p>
-+            <ul>
-+                <li>항목 1</li>
-+                <li>항목 2</li>
-+            </ul>
-+        </div>
-+    </details>
-+
-+    <details>
-+        <summary>세 번째 토글 제목</summary>
-+        <div class="toggle-content">
-+            <p>세 번째 토글에 대한 설명입니다. 필요한 만큼 토글을 추가하여 문서를 구조화할 수 있습니다.</p>
-+        </div>
-+    </details>
+ <body>
+ 
+     <h1>메인 페이지</h1>
+    <input type="text" id="searchInput" placeholder="문서 내용 검색..." style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+    
+     <details>
+         <summary>첫 번째 토글 제목</summary>
+         <div class="toggle-content">
+             <p>세 번째 토글에 대한 설명입니다. 필요한 만큼 토글을 추가하여 문서를 구조화할 수 있습니다.</p>
+         </div>
+     </details>
 
-</body>
-</html>
+    <script>
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const detailsElements = document.querySelectorAll('details');
+
+            detailsElements.forEach(function(details) {
+                const summaryText = details.querySelector('summary').textContent.toLowerCase();
+                const contentText = details.querySelector('.toggle-content').textContent.toLowerCase();
+                
+                if (summaryText.includes(searchTerm) || contentText.includes(searchTerm)) {
+                    details.style.display = '';
+                } else {
+                    details.style.display = 'none';
+                }
+            });
+        });
+    </script>
+ 
+ </body>
+ </html>
