@@ -34,24 +34,52 @@
     .wrap{width:min(1100px,100%)}
     .hero{background:linear-gradient(135deg,rgba(255,255,255,.75),rgba(255,255,255,.6));backdrop-filter:blur(6px);border:1px solid var(--bd);border-radius:24px;padding:40px 28px;box-shadow:var(--shadow-md)}
     @media (prefers-color-scheme: dark){.hero{background:linear-gradient(135deg,rgba(16,27,42,.86),rgba(16,27,42,.72))}}
+    
+    /* 상단 타이틀 영역 */
     .title{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:14px}
     .logo-img{width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.15))}
     .title-text{min-width:0}
     .title-text h1{margin:0;font-weight:800;letter-spacing:-.02em;line-height:1.1;font-size:clamp(18px,5.2vw,34px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .title-text .sub{margin:8px 0 0;color:var(--muted);line-height:1.5;font-size:clamp(13px,1.8vw,16px)}
-    .grid{margin-top:28px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));padding:0;list-style:none}
-    .card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:18px;text-decoration:none;color:inherit;box-shadow:var(--shadow-sm);transition:transform .18s,box-shadow .18s,border-color .18s,background-color .18s;display:block}
+    
+    /* 그리드 및 카드 스타일 수정됨 */
+    .grid{margin-top:28px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));padding:0;list-style:none}
+    
+    .card{
+      background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:20px;
+      text-decoration:none;color:inherit;box-shadow:var(--shadow-sm);
+      transition:transform .18s,box-shadow .18s,border-color .18s;
+      
+      /* [핵심 수정] 가로 배치를 위한 Flexbox 적용 */
+      display:flex; 
+      align-items:center; /* 수직 중앙 정렬 */
+      gap: 16px; /* 아이콘과 텍스트 사이 간격 */
+      text-align: left;
+    }
+    
     .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--ring)}
     .card:focus-visible{outline:3px solid var(--ring);outline-offset:3px}
-    .card .icon{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-size:20px;background:#eef6ff;color:#0a66d3;margin-bottom:10px}
+    
+    /* 아이콘 스타일 수정: 마진 제거 및 크기 고정 */
+    .card .icon{
+      width:48px;height:48px; /* 크기 약간 키움 */
+      border-radius:12px;
+      display:grid;place-items:center;font-size:24px;
+      background:#eef6ff;color:#0a66d3;
+      margin-bottom: 0; /* 기존 하단 마진 제거 */
+      flex-shrink: 0; /* 아이콘 찌그러짐 방지 */
+    }
     @media (prefers-color-scheme: dark){.card .icon{background:#0f2a45;color:#7cc0ff}}
-    .card h3{margin:6px 0 6px;font-size:18px}
-    .card p{margin:0;color:#44607a;font-size:14px}
+    
+    /* 텍스트 래퍼 스타일 */
+    .card-content { min-width: 0; flex: 1; }
+    
+    .card h3{margin:0 0 4px 0; font-size:18px; line-height: 1.3;}
+    .card p{margin:0;color:#44607a;font-size:14px; line-height: 1.4;}
     @media (prefers-color-scheme: dark){.card p{color:#a3bed6}}
+    
     .footer{margin-top:22px;text-align:center;color:#44607a;font-size:12px;opacity:.9}
     @media (prefers-color-scheme: dark){.footer{color:#a3bed6}}
-    .help{margin-top:10px;color:#5b7a95;font-size:13px}
-    @media (prefers-color-scheme: dark){.help{color:#95b3cf}}
   </style>
 </head>
 <body>
@@ -60,8 +88,8 @@
       <header class="title">
         <img class="logo-img" src="./assets/gongdan-mark.png" alt="공단 마크" width="52" height="52" decoding="async" fetchpriority="high"/>
         <div class="title-text">
-          <h1 id="title">수질자동측정망 온라인핸드북</h1>
-          <p class="sub">측정망 지도, 소모품 관리, 운영방법에 대한 정보를 제공합니다.</p>
+          <h1 id="title">측정망 온라인핸드북</h1>
+          <p class="sub">한강수계 수질자동측정망 </p>
         </div>
       </header>
 
@@ -69,25 +97,30 @@
         <li>
           <a class="card" href="./map.html" aria-label="측정망 지도">
             <div class="icon" aria-hidden="true">🗺️</div>
-            <h3>측정망 지도</h3>
-            <p>측정망 위치 및 주요 지점에 대한 정보</p>
+            <div class="card-content">
+              <h3>측정망 지도</h3>
+              <p>측정소 및 주요 지점</p>
+            </div>
           </a>
         </li>
 
         <li>
           <a class="card" href="./request.html" aria-label="소모품 관리">
             <div class="icon" aria-hidden="true">📝</div>
-            <h3>소모품 관리</h3>
-            <p>소모품 재고 및 요청 등에 대한 정보</p>
+            <div class="card-content">
+              <h3>소모품 관리</h3>
+              <p>소모품 재고 및 구매요청</p>
+            </div>
           </a>
         </li>
 
         <li>
           <a class="card" href="./docs.html" aria-label="측정망 온라인핸드북">
             <div class="icon" aria-hidden="true">📚</div>
-            <h3>측정망 온라인핸드북</h3>
-            <p>측정망 운영방법에 대한 전반적인 정보</p>
-            <p></p>
+            <div class="card-content">
+              <h3>측정망 온라인핸드북</h3>
+              <p>운영에 대한 전반적인 정보</p>
+            </div>
           </a>
         </li>
       </ul>
