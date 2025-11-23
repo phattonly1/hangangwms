@@ -9,102 +9,91 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <style>
-  :root{
-    --hdr:56px; --gap:12px; --btn:56px; --round:14px;
+  /* [통일된 테마 변수] index.html 기준 */
+  :root {
+    --hdr: 60px; --gap: 16px; --btn: 56px; --round: 16px;
     --sa-t: env(safe-area-inset-top, 0px);
     --sa-r: env(safe-area-inset-right, 0px);
     --sa-b: env(safe-area-inset-bottom, 0px);
     --sa-l: env(safe-area-inset-left, 0px);
-    /* Leaflet 우하단 컨트롤 실제 높이를 JS로 대입 (초기값 96px) */
     --leaflet-bottom: 96px;
+
+    /* Light Mode (기본) */
+    --bg: #e6f4ff; --text: #0b2239; --card-bg: rgba(255, 255, 255, 0.9);
+    --bd: rgba(0, 0, 0, 0.08); --shadow: 0 8px 24px rgba(15, 45, 80, 0.1);
+    --primary: #0ea5e9; --accent-text: #0284c7;
   }
-  html{ -webkit-text-size-adjust:100%; }
-  input, select, button{ font-size:16px; }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:system-ui,Apple SD Gothic Neo,Pretendard,Segoe UI,Roboto,Arial}
-  body{background:#0b1622;color:#e6eef6; touch-action: manipulation;}
-
-  /* 헤더 */
-  .appbar{
-    position:sticky;top:0;z-index:10;height:var(--hdr);
-    padding:0 calc(var(--gap)+var(--sa-r)) 0 calc(var(--gap)+var(--sa-l));
-    display:flex;align-items:center;gap:10px;background:#101b2a;border-bottom:1px solid rgba(255,255,255,.08)
+  
+  /* Dark Mode */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1622; --text: #e6eef6; --card-bg: rgba(22, 32, 50, 0.9);
+      --bd: rgba(255, 255, 255, 0.1); --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --primary: #38bdf8; --accent-text: #7dd3fc;
+    }
   }
-  .title{font-weight:800;letter-spacing:-.02em}
 
-  /* 지도 */
-  .wrap{ position:relative; height: calc(100svh - var(--hdr)); min-height: 420px; }
-  #map{width:100%;height:100%}
-
-  /* Leaflet 컨트롤: 모두 우하단(최하단) */
-  .leaflet-control-container .leaflet-bottom.leaflet-right{
-    margin-right: calc(var(--gap) + var(--sa-r));
-    margin-bottom: calc(var(--gap) + var(--sa-b));
-    z-index: 1000;
+  html,body{height:100%;margin:0;font-family:-apple-system, BlinkMacSystemFont, "Pretendard", system-ui, sans-serif;}
+  body{background:var(--bg);color:var(--text); touch-action: manipulation;}
+  
+  /* 헤더 통일 */
+  .appbar {
+    position: sticky; top: 0; z-index: 1000; height: var(--hdr);
+    padding: var(--sa-t) var(--gap) 0 var(--gap);
+    display: flex; align-items: center; gap: 10px;
+    background: var(--card-bg); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--bd); box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   }
-  .leaflet-control{box-shadow:0 2px 8px rgba(0,0,0,.4)!important;border-radius:12px!important}
-  .leaflet-control a{border-radius:12px!important}
+  .title { font-weight: 800; font-size: 18px; letter-spacing: -0.02em; color: var(--text); }
 
-  /* 우하단 도킹: 우리 아이콘 스택 (Leaflet 위) */
-  .br-dock{
-    position:fixed; z-index:1200;
+  /* 지도 컨테이너 */
+  .wrap { position: relative; height: calc(100svh - var(--hdr) - var(--sa-t)); }
+  #map { width: 100%; height: 100%; background: #ddd; }
+
+  /* 컨트롤 버튼 (우하단) */
+  .br-dock {
+    position: fixed; z-index: 1200;
     right: calc(var(--gap) + var(--sa-r));
     bottom: calc(var(--leaflet-bottom) + 12px + var(--sa-b));
-    display:flex; flex-direction:column; gap:10px;
+    display: flex; flex-direction: column; gap: 10px;
   }
-  .br-dock .btn{
-    width:var(--btn); height:var(--btn);
-    display:grid; place-items:center;
-    border:none; border-radius:999px; cursor:pointer;
-    background:#0f1725; color:#e6eef6; box-shadow:0 6px 14px rgba(0,0,0,.35);
+  .btn {
+    width: var(--btn); height: var(--btn);
+    display: grid; place-items: center;
+    border: 1px solid var(--bd); border-radius: 999px; cursor: pointer;
+    background: var(--card-bg); color: var(--text);
+    box-shadow: var(--shadow); backdrop-filter: blur(4px);
   }
-  .btn:hover{ filter:brightness(1.05) }
-  .btn:active{ transform:translateY(1px) }
-  .btn--gps{ background:#00b894; color:#fff; }
+  .btn:hover { filter: brightness(0.95); }
+  @media (prefers-color-scheme: dark) { .btn:hover { filter: brightness(1.2); } }
+  .btn--gps { background: var(--primary); color: #fff; border: none; }
 
-  /* 패널: 우하단에서 위로 뜸 (아이콘 위) */
-  .panel{
-    position:fixed; z-index:1250;
+  /* 패널 스타일 통일 */
+  .panel {
+    position: fixed; z-index: 1250;
     right: calc(var(--gap) + var(--sa-r));
     bottom: calc(var(--leaflet-bottom) + 12px + var(--sa-b) + var(--btn) + 12px);
-    background:rgba(16,27,42,.96); color:#e6eef6;
-    border:1px solid rgba(255,255,255,.1); border-radius:var(--round);
-    padding:10px; max-width:min(92vw, 420px);
-    display:grid; grid-template-columns:1fr; row-gap:8px;
+    background: var(--card-bg); color: var(--text);
+    border: 1px solid var(--bd); border-radius: var(--round);
+    padding: 16px; max-width: min(92vw, 420px);
+    display: grid; grid-template-columns: 1fr; row-gap: 12px;
+    box-shadow: var(--shadow); backdrop-filter: blur(12px);
   }
-  .panel.collapsed{ display:none; }
+  .panel.collapsed { display: none; }
+  
+  .panel select {
+    border: 1px solid var(--bd); background: rgba(0,0,0,0.05); color: var(--text);
+    border-radius: 8px; padding: 10px; font-size: 16px; width: 100%; appearance: none;
+  }
+  @media (prefers-color-scheme: dark) { .panel select { background: rgba(255,255,255,0.05); } }
 
-  .panel .group.filters{
-    display:grid; grid-template-columns:1fr; row-gap:8px; /* 모바일: 체크 3줄 */
-  }
-  .panel label{ display:flex; align-items:center; gap:8px; font-size:16px; line-height:1; white-space:nowrap; }
-  .panel input[type="checkbox"]{ width:18px;height:18px;accent-color:#4da3ff; }
-  .panel select{
-    border:1px solid #334155; background:#0f1725; color:#e6eef6;
-    border-radius:10px; padding:8px 10px; font-size:16px; width:100%;
-  }
-
-  /* 토스트: 도킹/패널 위쪽 */
-  .toast{
-    position:fixed; z-index:1225;
-    right: calc(var(--gap) + var(--sa-r));
-    bottom: calc(var(--leaflet-bottom) + 12px + var(--sa-b) + var(--btn) + 12px + 8px);
-    background:rgba(0,0,0,.88); color:#fff; border-radius:10px; padding:10px 12px; font-size:14px;
-    opacity:0; pointer-events:none; transition:opacity .2s
-  }
-  .toast.show{opacity:1}
-
-  /* 데스크탑에선 패널 좀 넓게 + 체크 2열 */
-  @media (min-width:1024px){
-    .panel{ max-width:560px; }
-    .panel .group.filters{ grid-template-columns:1fr 1fr; column-gap:12px; }
-  }
-
-  /* 에러 박스 */
-  .err{
-    position:fixed; left:8px; right:8px; top: calc(8px + var(--sa-t));
-    z-index:2000;background:#2b1d1d;color:#ffd7d7;border:1px solid #ff6b6b;border-radius:10px;padding:8px 10px;font-size:12px
-  }
+  /* 기존 스타일 유지 항목들 */
+  .leaflet-control-container .leaflet-bottom.leaflet-right { margin-right: calc(var(--gap) + var(--sa-r)); margin-bottom: calc(var(--gap) + var(--sa-b)); z-index: 1000; }
+  .toast { position: fixed; z-index: 1225; left: 50%; transform: translateX(-50%); bottom: 100px; background: rgba(0,0,0,0.8); color: #fff; border-radius: 20px; padding: 10px 20px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .toast.show { opacity: 1; }
+  .panel .group.filters { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .panel label { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 500; }
+  .panel input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); }
 </style>
 </head>
 <body>
