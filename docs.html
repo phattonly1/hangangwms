@@ -3,395 +3,460 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-    <title>스마트 문서함</title>
+    <title>수질자동측정망 온라인 핸드북</title>
     <style>
         :root {
-            --hdr: 60px; /* 앱바 높이 */
-            --search-h: 70px; /* 검색창 영역 높이 */
+            --hdr: 60px; 
+            --search-h: 70px;
             --gap: 16px; --btn: 56px; --round: 12px;
             --bg-color: #0b1622; --card-bg: #101b2a; --text-main: #e6eef6; --text-sub: #94a3b8;
-            --accent: #38bdf8; --highlight: #0ea5e9;
+            --accent: #38bdf8; --highlight: #0ea5e9; --active-match: #f43f5e;
             --sa-t: env(safe-area-inset-top, 0px);
             --sa-b: env(safe-area-inset-bottom, 0px);
+            --sidebar-w: 280px; /* 사이드바 너비 */
         }
 
         * { box-sizing: border-box; }
         html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); -webkit-tap-highlight-color: transparent; }
 
-        /* 1. 앱바 (완전 고정) */
+        /* 앱바 */
         .appbar {
-            position: fixed; /* sticky -> fixed 변경 */
-            top: 0; left: 0; right: 0; /* 좌우 꽉 차게 */
-            z-index: 100;
-            height: calc(var(--hdr) + var(--sa-t));
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 100; height: calc(var(--hdr) + var(--sa-t));
             padding: var(--sa-t) var(--gap) 0 var(--gap);
-            background: rgba(11, 22, 34, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(11, 22, 34, 0.95); backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255,255,255,0.1);
             display: flex; align-items: center; justify-content: space-between;
         }
-        .appbar h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+        .app-left { display: flex; align-items: center; gap: 12px; }
+        .menu-btn { background: none; border: none; color: var(--text-main); font-size: 24px; cursor: pointer; padding: 4px; display: flex; align-items: center; }
+        .appbar h1 { margin: 0; font-size: 20px; font-weight: 700; }
 
-        /* 2. 검색창 영역 (완전 고정) */
+        /* 검색창 */
         .search-wrap {
-            position: fixed; /* sticky -> fixed 변경 */
-            top: calc(var(--hdr) + var(--sa-t)); /* 앱바 바로 아래 위치 */
-            left: 0; right: 0;
-            height: var(--search-h); /* 높이 고정 */
-            z-index: 90;
-            
-            padding: 10px var(--gap);
-            background: var(--bg-color); 
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: fixed; top: calc(var(--hdr) + var(--sa-t)); left: 0; right: 0;
+            height: var(--search-h); z-index: 90; padding: 10px var(--gap);
+            background: var(--bg-color); border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-
+        .input-container { position: relative; height: 100%; }
         #searchInput {
-            width: 100%; height: 100%; /* 부모 높이에 맞춤 */
-            padding: 0 16px;
-            padding-right: 40px; /* X버튼 공간 */
+            width: 100%; height: 100%; padding: 0 16px; padding-right: 40px;
             border-radius: var(--round); border: 1px solid rgba(255,255,255,0.15);
             background: #1e293b; color: white; font-size: 16px;
-            transition: border-color 0.3s, box-shadow 0.3s;
         }
-        #searchInput:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
-
-        /* 검색어 초기화(X) 버튼 스타일 */
+        #searchInput:focus { outline: none; border-color: var(--accent); }
         .clear-search-btn {
-            position: absolute; 
-            right: calc(var(--gap) + 12px); 
-            top: 50%; 
-            transform: translateY(-50%);
-            width: 30px; height: 30px; 
-            border: none; background: transparent; 
-            color: var(--text-sub); font-size: 18px; 
-            cursor: pointer; z-index: 95; padding: 0;
-            display: grid; place-items: center;
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            width: 30px; height: 30px; border: none; background: transparent;
+            color: var(--text-sub); font-size: 16px; cursor: pointer; display: none;
         }
 
-        /* 3. 리스트 컨테이너 (여백 확보가 핵심) */
+        /* 메인 컨테이너 */
         #listContainer {
             padding: var(--gap);
-            /* 앱바 높이 + 검색창 높이 + 여유분(10px) 만큼 상단 여백을 줌 */
             padding-top: calc(var(--hdr) + var(--sa-t) + var(--search-h) + 10px);
             padding-bottom: calc(100px + var(--sa-b));
             max-width: 800px; margin: 0 auto;
+            display: block;
         }
-
-        /* 4. 토글 스타일 */
-        details {
-            background-color: var(--card-bg);
-            margin-bottom: 10px; border-radius: var(--round);
-            border: 1px solid rgba(255,255,255,0.08); overflow: hidden;
-        }
-        summary {
-            padding: 14px 16px; cursor: pointer; font-weight: 600;
-            list-style: none; display: flex; justify-content: space-between; align-items: center;
-            color: var(--text-main); transition: background 0.2s;
-        }
-        summary:hover { background-color: rgba(255,255,255,0.05); }
-        summary::after { content: '▼'; font-size: 12px; color: var(--text-sub); transition: transform 0.3s; }
-        details[open] > summary::after { transform: rotate(180deg); color: var(--accent); }
-        
-        .content-box { padding: 16px; background-color: rgba(0,0,0,0.2); line-height: 1.6; color: #cbd5e1; border-top: 1px solid rgba(255,255,255,0.05); font-size: 15px; white-space: pre-wrap; }
-        .sub-list { border-top: 1px solid rgba(255,255,255,0.05); background-color: rgba(255,255,255,0.02); padding: 10px 0 10px 16px; }
-        
-        .highlight { background-color: rgba(14, 165, 233, 0.4); color: white; border-radius: 2px; padding: 0 2px; }
-        
-        /* 검색 결과 없음 - 위치 조정 */
-        #noResult { 
-            text-align: center; color: var(--text-sub); 
-            padding-top: calc(var(--hdr) + var(--sa-t) + var(--search-h) + 40px);
+        #searchResultContainer {
+            padding: var(--gap);
+            padding-top: calc(var(--hdr) + var(--sa-t) + var(--search-h) + 10px);
+            padding-bottom: calc(100px + var(--sa-b));
+            max-width: 800px; margin: 0 auto;
             display: none; 
         }
 
-        /* 5. 플로팅 버튼 */
-        .br-dock {
-            position: fixed; z-index: 1000;
-            right: var(--gap); bottom: calc(var(--gap) + var(--sa-b));
-            display: flex; flex-direction: column; gap: 12px;
+        /* --- 사이드바 스타일 (NEW) --- */
+        .sidebar-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); z-index: 1000;
+            opacity: 0; visibility: hidden; transition: 0.3s;
         }
-        .fab {
-            width: var(--btn); height: var(--btn);
-            display: grid; place-items: center;
-            border: none; border-radius: 50%; cursor: pointer;
-            background: #1e293b; color: var(--text-main);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            font-size: 20px; transition: transform 0.2s, background 0.2s;
+        .sidebar-overlay.open { opacity: 1; visibility: visible; }
+
+        .sidebar {
+            position: fixed; top: 0; bottom: 0; left: -100%;
+            width: var(--sidebar-w); max-width: 80%;
+            background: #162032; z-index: 1001;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: column;
+            padding-top: calc(var(--sa-t) + 20px);
         }
+        .sidebar.open { left: 0; }
+        
+        .sidebar-header { padding: 0 20px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-header h2 { margin: 0; font-size: 18px; color: var(--accent); }
+        .close-sidebar-btn { background: none; border: none; color: var(--text-sub); font-size: 24px; cursor: pointer; }
+
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 10px 0; }
+        
+        /* 사이드바 트리 스타일 */
+        .nav-tree ul { list-style: none; padding-left: 0; margin: 0; }
+        .nav-tree li { margin: 0; }
+        .nav-item {
+            display: block; padding: 10px 20px; color: var(--text-main);
+            text-decoration: none; font-size: 14px; cursor: pointer;
+            border-left: 3px solid transparent; transition: background 0.2s;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.05); }
+        .nav-item.active { border-left-color: var(--accent); background: rgba(56, 189, 248, 0.1); color: var(--accent); font-weight: bold; }
+        
+        /* 뎁스별 들여쓰기 */
+        .nav-tree ul ul .nav-item { padding-left: 35px; font-size: 13px; color: var(--text-sub); }
+        .nav-tree ul ul ul .nav-item { padding-left: 50px; }
+
+
+        /* --- 기존 스타일 유지 --- */
+        .result-card { background-color: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--round); padding: 16px; margin-bottom: 12px; cursor: pointer; transition: transform 0.2s, background 0.2s; }
+        .result-card:active { transform: scale(0.98); background-color: rgba(255,255,255,0.05); }
+        .result-path { font-size: 12px; color: var(--accent); margin-bottom: 6px; opacity: 0.8; }
+        .result-text { font-size: 15px; line-height: 1.5; color: #e2e8f0; }
+        .result-text .highlight { background-color: rgba(14, 165, 233, 0.4); color: white; border-radius: 2px; padding: 0 2px; font-weight: bold; }
+
+        details { background: var(--card-bg); margin-bottom: 10px; border-radius: var(--round); border: 1px solid rgba(255,255,255,0.08); overflow: hidden; }
+        summary { padding: 14px 16px; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        summary::after { content: '▼'; font-size: 12px; color: var(--text-sub); transition: transform 0.3s; }
+        details[open] > summary::after { transform: rotate(180deg); color: var(--accent); }
+        .content-box { padding: 16px; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.05); }
+        .sub-list { border-top: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); padding: 10px 0 10px 16px; }
+
+        .content-box table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px; border-style: hidden; }
+        .content-box th, .content-box td { border: 1px solid rgba(255, 255, 255, 0.3); padding: 10px 12px; text-align: left; vertical-align: top; }
+        .content-box th { background-color: rgba(255, 255, 255, 0.1); color: var(--accent); font-weight: 700; }
+        .content-box tr:hover td { background-color: rgba(255, 255, 255, 0.05); }
+
+        .doc-segment { margin-bottom: 8px; padding: 4px; border-radius: 4px; transition: background 1s; }
+        .doc-segment.flash-target { background-color: rgba(56, 189, 248, 0.3); }
+
+        #noResult { text-align: center; color: var(--text-sub); margin-top: 50px; display: none; }
+
+        .br-dock { position: fixed; z-index: 900; right: var(--gap); bottom: calc(var(--gap) + var(--sa-b)); display: flex; flex-direction: column; gap: 12px; }
+        .fab { width: var(--btn); height: var(--btn); display: grid; place-items: center; border: none; border-radius: 50%; cursor: pointer; background: #1e293b; color: var(--text-main); box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 20px; transition: transform 0.2s; }
         .fab:active { transform: scale(0.92); }
-        .fab--main { background: var(--accent); color: #0f1725; font-weight: bold; }
+        .fab--return { background: #f59e0b; color: #fff; font-weight: bold; display: none; }
 
-        /* 6. 토스트 알림 */
-        .toast {
-            position: fixed; z-index: 1200;
-            left: 50%; bottom: calc(var(--gap) + var(--sa-b) + var(--btn) + 20px);
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.9); color: #fff;
-            border-radius: 20px; padding: 10px 20px; font-size: 14px;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s; white-space: nowrap;
-        }
-        .toast.show { opacity: 1; }
-
-        /* [추가] 일반 텍스트 박스 스타일 (화살표 없는 문구) */
-        .text-block {
-            background-color: rgba(255, 255, 255, 0.03);
-            border-left: 3px solid var(--text-sub);
-            padding: 10px 14px;
-            margin-bottom: 8px;
-            border-radius: 4px;
-            font-size: 15px;
-            color: #e2e8f0;
-        }
-
-        /* 7. 타임라인 & 순서도 스타일 */
-        .timeline { list-style: none; padding: 0; margin: 15px 0 0 0; position: relative; }
-        .timeline-item { position: relative; display: flex; align-items: flex-start; gap: 12px; }
-        .timeline-item:not(:last-child) { padding-bottom: 20px; }
-        .timeline-item:not(:last-child)::before { content: ''; position: absolute; left: 12px; top: 26px; width: 2px; height: 100%; background-color: var(--accent); opacity: 0.3; }
-        .timeline-number { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background-color: var(--accent); color: var(--bg-color); display: grid; place-items: center; font-size: 14px; font-weight: bold; }
-        .timeline-text { padding-top: 3px; }
-
-        .flowchart-container { display: flex; flex-direction: column; align-items: center; padding: 20px 0; width: 100%; }
-        .flow-step { background-color: var(--card-bg); border: 1px solid rgba(255,255,255,0.2); color: var(--text-main); border-radius: 8px; padding: 12px 20px; margin: 15px 0; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); min-width: 140px; position: relative; font-size: 14px; font-weight: 600; }
-        .flow-step.start { border-color: var(--accent); color: var(--accent); }
-        .flow-step.decision { border: none; background-color: var(--card-bg); color: #f59e0b; width: 180px; min-height: 80px; position: relative; z-index: 10; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); display: flex; justify-content: center; align-items: center; padding: 0; margin: 25px 0; }
-        .flow-step.decision > span { display: block; padding: 10px; text-align: center; line-height: 1.4; max-width: 90%; font-weight: 600; }
-        .flow-step:not(:last-child)::after { content: ''; position: absolute; left: 50%; bottom: -27px; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 12px solid var(--text-sub); z-index: 1; }
-        .flow-parallel-branches { display: flex; justify-content: center; gap: 10px; width: 100%; position: relative; padding-top: 10px; margin-top: 10px; }
-        .flow-branch { display: flex; flex-direction: column; align-items: center; flex: 1; }
     </style>
 </head>
 <body>
 
     <header class="appbar">
-        <h1>📂 스마트 문서함</h1>
+        <div class="app-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <h1>📖온라인 핸드북</h1>
+        </div>
         <div style="font-size: 14px; color: var(--text-sub);" id="docCount">0건</div>
     </header>
 
-    <div class="search-wrap">
-        <input type="text" id="searchInput" placeholder="제목, 내용 검색..." autocomplete="off">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>목차</h2>
+            <button class="close-sidebar-btn" id="closeSidebarBtn">✖</button>
         </div>
+        <div class="sidebar-content nav-tree" id="sidebarContent">
+            </div>
+    </aside>
+
+    <div class="search-wrap">
+        <div class="input-container">
+            <input type="text" id="searchInput" placeholder="검색어를 입력하면 해당 부분만 보입니다..." autocomplete="off">
+            <button class="clear-search-btn" id="clearBtn">✖</button>
+        </div>
+    </div>
 
     <main id="listContainer">불러오는 중...</main>
+
+    <div id="searchResultContainer"></div>
     <div id="noResult">검색 결과가 없습니다.</div>
 
     <div class="br-dock">
-        <button class="fab" id="topBtn" title="위로 이동">⬆</button>
-        <button class="fab fab--main" id="toggleAllBtn" title="모두 펼치기/접기">📂</button>
+        <button class="fab fab--return" id="backToSearchBtn" title="검색 결과로 돌아가기">↩</button>
+        <button class="fab" id="topBtn" title="위로">⬆</button>
     </div>
 
-    <div class="toast" id="toast">알림</div>
-
     <script>
+        const CHO_SUNG = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+        function getChosung(str) {
+            let result = "";
+            for (let i = 0; i < str.length; i++) {
+                const code = str.charCodeAt(i) - 44032;
+                if (code > -1 && code < 11172) result += CHO_SUNG[Math.floor(code / 588)];
+                else result += str.charAt(i);
+            }
+            return result;
+        }
+
         let docData = [];
-        let isAllExpanded = false;
         const listContainer = document.getElementById('listContainer');
+        const searchResultContainer = document.getElementById('searchResultContainer');
         const noResult = document.getElementById('noResult');
-        const docCount = document.getElementById('docCount');
         const searchInput = document.getElementById('searchInput');
-        const searchWrap = document.querySelector('.search-wrap');
-        let clearButton = null;
+        const clearBtn = document.getElementById('clearBtn');
+        const backToSearchBtn = document.getElementById('backToSearchBtn');
+        
+        // 사이드바 요소
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+        const sidebarContent = document.getElementById('sidebarContent');
+
+        let debounceTimer;
+        let lastScrollPosition = 0;
 
         // 1. 데이터 로드
         fetch('data.json')
-            .then(response => {
-                if (!response.ok) throw new Error('HTTP error ' + response.status);
-                return response.json();
-            })
+            .then(res => res.json())
             .then(data => {
+                assignIds(data);
                 docData = data;
-                renderTree(); 
-                docCount.textContent = `총 ${countItems(data)}개`;
-                toast('데이터 로드 완료 ✅');
+                
+                // 메인 컨텐츠 생성
+                listContainer.innerHTML = buildTreeHTML(docData);
+                document.getElementById('docCount').textContent = `총 ${countItems(data)}건`;
+                
+                // 사이드바 목차 생성 (NEW)
+                sidebarContent.innerHTML = buildSidebarHTML(docData);
             })
-            .catch(error => {
-                console.error('오류:', error);
-                listContainer.innerHTML = '<div style="text-align:center; color: tomato; padding: 40px;">데이터 로드 실패</div>';
+            .catch(err => {
+                listContainer.innerHTML = '<div style="text-align:center; padding:20px;">데이터 로드 실패</div>';
             });
 
-        // 2. 검색 & X 버튼 기능
-        searchInput.addEventListener('input', function() {
-            const keyword = this.value.trim();
-            renderTree(keyword);
-            toggleClearButton(keyword.length > 0);
-        });
-
-        function toggleClearButton(show) {
-            if (show && !clearButton) {
-                clearButton = document.createElement('button');
-                clearButton.textContent = '✖';
-                clearButton.className = 'clear-search-btn';
-                clearButton.title = '검색어 지우기';
-                
-                clearButton.addEventListener('click', () => {
-                    searchInput.value = '';
-                    searchInput.focus();
-                    renderTree('');
-                    toggleClearButton(false);
-                    toast('검색어 초기화');
-                });
-                searchWrap.appendChild(clearButton);
-            } else if (!show && clearButton) {
-                if(searchWrap.contains(clearButton)) {
-                    searchWrap.removeChild(clearButton);
-                }
-                clearButton = null;
-            }
-        }
-
-        // 3. 트리 생성 로직 (수정됨: <p> 분리 및 혼합 렌더링 지원)
-        function buildTreeHTML(items, keyword) {
-            let html = '';
-            let hasMatchInLevel = false;
-
-            items.forEach(item => {
-                const lowerKeyword = keyword ? keyword.toLowerCase() : '';
-                const isTitleMatch = item.title.toLowerCase().includes(lowerKeyword);
-                const isContentMatch = item.content && item.content.toLowerCase().includes(lowerKeyword);
-                
-                let childrenResult = { html: '', hasMatch: false };
-                if (item.children) {
-                    childrenResult = buildTreeHTML(item.children, keyword);
-                }
-
-                if (keyword === '' || isTitleMatch || isContentMatch || childrenResult.hasMatch) {
-                    hasMatchInLevel = true;
-                    let displayTitle = keyword ? highlightText(item.title, keyword) : item.title;
-                    const isOpen = (keyword !== '' && (childrenResult.hasMatch || isTitleMatch || isContentMatch)) || isAllExpanded ? 'open' : '';
-                    
-                    const itemId = `doc-${Math.random().toString(36).substring(2, 9)}`;
-
-                    html += `<details ${isOpen} id="${itemId}">`;
-                    html += `<summary data-target-id="${itemId}">${displayTitle}</summary>`;
-                    
-                    if (item.content) {
-                        // [핵심 수정] content를 <p> 태그 기준으로 분리하여 배열로 만듦
-                        // <p>로 시작하거나 끝나는 태그들 제거 및 분리
-                        const rawSections = item.content.split(/<p[^>]*>|<\/p>/i);
-                        
-                        let combinedContentHtml = '';
-
-                        rawSections.forEach(section => {
-                            let cleanSection = section.trim();
-                            if (!cleanSection) return; // 빈 섹션 무시
-
-                            // 1. 순서도(Flowchart) 처리
-                            if (cleanSection.includes('flowchart-container')) {
-                                let flowHtml = cleanSection;
-                                if (keyword) {
-                                    flowHtml = highlightTextInFlowContainer(flowHtml, keyword, '.flowchart-container');
-                                }
-                                combinedContentHtml += `<div>${flowHtml}</div>`;
-                            } 
-                            // 2. 타임라인(화살표 →) 처리
-                            else if (cleanSection.includes('→')) {
-                                const steps = cleanSection.split('→')
-                                    .map(step => step.trim())
-                                    .filter(step => {
-                                        if (!step) return false;
-                                        // 태그만 있고 텍스트 없는 경우 필터링
-                                        const tempDiv = document.createElement('div');
-                                        tempDiv.innerHTML = step;
-                                        return tempDiv.textContent.trim().length > 0;
-                                    });
-
-                                let listHtml = '<ol class="timeline">';
-                                steps.forEach((step, index) => {
-                                    const hStep = keyword ? highlightText(step, keyword) : step;
-                                    listHtml += `<li class="timeline-item"><span class="timeline-number">${index+1}</span><span class="timeline-text">${hStep}</span></li>`;
-                                });
-                                listHtml += '</ol>';
-                                combinedContentHtml += listHtml;
-                            } 
-                            // 3. 일반 텍스트 박스 처리 (화살표 없는 문구)
-                            else {
-                                const hText = keyword ? highlightText(cleanSection, keyword) : cleanSection;
-                                combinedContentHtml += `<div class="text-block">${hText}</div>`;
-                            }
-                        });
-
-                        html += `<div class="content-box">${combinedContentHtml}</div>`;
-                    }
-                    
-                    if (item.children) {
-                        html += `<div class="sub-list">${childrenResult.html}</div>`;
-                    }
-                    html += `</details>`;
-                }
+        function assignIds(items, prefix = 'node') {
+            items.forEach((item, idx) => {
+                item.uid = `${prefix}-${idx}`;
+                if (item.children) assignIds(item.children, item.uid);
             });
-            return { html, hasMatch: hasMatchInLevel };
         }
-
-        function renderTree(keyword = '') {
-            const result = buildTreeHTML(docData, keyword);
-            listContainer.innerHTML = result.html;
-            noResult.style.display = (result.html === '') ? 'block' : 'none';
-            if (keyword !== '') addScrollToItemListeners();
-        }
-
-        function highlightText(text, keyword) {
-            const regex = new RegExp(`(${keyword})`, 'gi');
-            return text.replace(regex, '<span class="highlight">$1</span>');
-        }
-
-        function highlightTextInFlowContainer(htmlContent, keyword, containerClass) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = htmlContent;
-            tempDiv.querySelectorAll('.flow-step, .flow-step span').forEach(el => {
-                if(el.children.length === 0) el.innerHTML = highlightText(el.innerText, keyword);
-            });
-            return tempDiv.innerHTML;
-        }
-
         function countItems(items) {
             let count = 0;
-            items.forEach(item => {
-                count++;
-                if(item.children) count += countItems(item.children);
-            });
+            items.forEach(item => { count++; if(item.children) count += countItems(item.children); });
             return count;
         }
 
-        // 4. 클릭 시 스크롤 이동 (상단 고정 영역 높이 고려)
-        function addScrollToItemListeners() {
-            listContainer.querySelectorAll('details > summary').forEach(summary => {
-                summary.addEventListener('click', (event) => {
-                    if (searchInput.value.trim() !== '') {
-                        event.preventDefault();
-                        const targetId = summary.getAttribute('data-target-id');
-                        const targetElement = document.getElementById(targetId);
-
-                        if (targetElement) {
-                            targetElement.open = true;
-                            // 상단 고정 영역 높이 (앱바 + 검색창 + 여유분)
-                            const offset = document.querySelector('.appbar').offsetHeight + document.querySelector('.search-wrap').offsetHeight + 10;
-                            
-                            window.scrollTo({
-                                top: targetElement.offsetTop - offset,
-                                behavior: 'smooth'
-                            });
-                            toast('이동했습니다 🚀');
-                        }
-                    }
-                });
+        // 2. HTML 생성 (메인)
+        function buildTreeHTML(items) {
+            let html = '';
+            items.forEach(item => {
+                const detailId = `detail-${item.uid}`;
+                html += `<details id="${detailId}">`;
+                html += `<summary>${item.title}</summary>`;
+                if (item.content) {
+                    html += `<div class="content-box">`;
+                    const parts = splitContent(item.content);
+                    parts.forEach((part, pIdx) => {
+                        const segmentId = `seg-${item.uid}-${pIdx}`;
+                        html += `<div id="${segmentId}" class="doc-segment">${part}</div>`;
+                    });
+                    html += `</div>`;
+                }
+                if (item.children) html += `<div class="sub-list">${buildTreeHTML(item.children)}</div>`;
+                html += `</details>`;
             });
+            return html;
         }
 
-        // 5. 유틸리티
-        const toast = (m, ms=1500) => { 
-            const t = document.getElementById('toast'); t.textContent = m; 
-            t.classList.add('show'); setTimeout(() => t.classList.remove('show'), ms); 
+        // 2-1. 사이드바 목차 생성 (NEW)
+        function buildSidebarHTML(items) {
+            let html = '<ul>';
+            items.forEach(item => {
+                const targetId = `detail-${item.uid}`;
+                html += `<li>`;
+                html += `<a class="nav-item" onclick="handleNavClick('${targetId}')">${item.title}</a>`;
+                if (item.children) {
+                    html += buildSidebarHTML(item.children);
+                }
+                html += `</li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        function splitContent(content) {
+            return content.split(/<p[^>]*>|<\/p>|<div[^>]*>|<\/div>|<br\s*\/?>/i).map(s => s.trim()).filter(s => s.length > 0);
+        }
+
+        // 3. 사이드바 제어 로직 (NEW)
+        function toggleSidebar(open) {
+            if (open) {
+                sidebar.classList.add('open');
+                sidebarOverlay.classList.add('open');
+            } else {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('open');
+            }
+        }
+
+        menuBtn.addEventListener('click', () => toggleSidebar(true));
+        closeSidebarBtn.addEventListener('click', () => toggleSidebar(false));
+        sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
+
+        // 사이드바 항목 클릭 시 이동
+        window.handleNavClick = function(targetId) {
+            toggleSidebar(false); // 사이드바 닫기
+            
+            // 검색 중이었다면 메인 뷰로 복귀
+            if (searchInput.value.trim().length > 0) {
+                 searchInput.value = '';
+                 showMainTree();
+                 clearBtn.style.display = 'none';
+                 backToSearchBtn.style.display = 'none';
+            }
+
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+                // 부모들이 닫혀있다면 열기
+                let parent = targetEl.parentElement;
+                while (parent) {
+                    if (parent.tagName === 'DETAILS') parent.open = true;
+                    parent = parent.parentElement;
+                }
+                // 타겟 자체도 details라면 열기
+                if (targetEl.tagName === 'DETAILS') targetEl.open = true;
+
+                // 스크롤 이동
+                const offset = 140; 
+                const elementPosition = targetEl.getBoundingClientRect().top + window.scrollY;
+                const offsetPosition = elementPosition - offset;
+                
+                window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+
+                // 강조 효과 (summary에)
+                const summary = targetEl.querySelector('summary');
+                if(summary) {
+                    summary.style.color = 'var(--accent)';
+                    setTimeout(() => summary.style.color = '', 1500);
+                }
+            }
         };
 
-        document.getElementById('topBtn').addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // 4. 검색 로직
+        searchInput.addEventListener('input', function() {
+            const val = this.value.trim();
+            clearBtn.style.display = val.length > 0 ? 'block' : 'none';
+            backToSearchBtn.style.display = 'none';
+
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                if (val === '') showMainTree();
+                else performSearch(val);
+            }, 200);
         });
 
-        document.getElementById('toggleAllBtn').addEventListener('click', () => {
-            isAllExpanded = !isAllExpanded;
-            renderTree(document.getElementById('searchInput').value.trim());
-            toast(isAllExpanded ? '모두 펼침 📖' : '모두 접음 📕');
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchInput.focus();
+            showMainTree();
+            clearBtn.style.display = 'none';
+            backToSearchBtn.style.display = 'none';
+        });
+
+        function showMainTree() {
+            listContainer.style.display = 'block';
+            searchResultContainer.style.display = 'none';
+            noResult.style.display = 'none';
+        }
+
+        function performSearch(keyword) {
+            const keywords = keyword.split(/\s+/).filter(k => k.length > 0);
+            const results = [];
+
+            function traverse(items, pathStr) {
+                items.forEach(item => {
+                    const currentPath = pathStr ? `${pathStr} > ${item.title}` : item.title;
+                    if (item.content) {
+                        const parts = splitContent(item.content);
+                        parts.forEach((part, pIdx) => {
+                            const tempDiv = document.createElement('div'); tempDiv.innerHTML = part;
+                            const textOnly = tempDiv.textContent;
+                            const chosungOnly = getChosung(textOnly);
+                            const isMatch = keywords.every(k => textOnly.toLowerCase().includes(k.toLowerCase()) || chosungOnly.includes(k.toLowerCase()));
+
+                            if (isMatch) {
+                                results.push({
+                                    path: currentPath,
+                                    html: highlightText(part, keywords),
+                                    targetId: `seg-${item.uid}-${pIdx}`
+                                });
+                            }
+                        });
+                    }
+                    if (item.children) traverse(item.children, currentPath);
+                });
+            }
+            traverse(docData, '');
+            renderSearchResults(results);
+        }
+
+        function renderSearchResults(results) {
+            listContainer.style.display = 'none';
+            searchResultContainer.style.display = 'block';
+            if (results.length === 0) {
+                searchResultContainer.innerHTML = '';
+                noResult.style.display = 'block';
+                return;
+            }
+            noResult.style.display = 'none';
+            let html = '';
+            results.forEach(res => {
+                html += `
+                    <div class="result-card" onclick="jumpTo('${res.targetId}')">
+                        <div class="result-path">📂 ${res.path}</div>
+                        <div class="result-text">${res.html}</div>
+                    </div>
+                `;
+            });
+            searchResultContainer.innerHTML = html;
+        }
+
+        // 5. 점프 & 복귀
+        window.jumpTo = function(targetId) {
+            lastScrollPosition = window.scrollY;
+            showMainTree();
+            backToSearchBtn.style.display = 'grid';
+
+            const targetEl = document.getElementById(targetId);
+            if (!targetEl) return;
+
+            let parent = targetEl.parentElement;
+            while (parent) {
+                if (parent.tagName === 'DETAILS') parent.open = true;
+                parent = parent.parentElement;
+            }
+
+            const offset = 140;
+            const elementPosition = targetEl.getBoundingClientRect().top + window.scrollY;
+            const offsetPosition = elementPosition - offset;
+
+            window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+
+            targetEl.classList.add('flash-target');
+            setTimeout(() => targetEl.classList.remove('flash-target'), 2000);
+        };
+
+        backToSearchBtn.addEventListener('click', () => {
+            listContainer.style.display = 'none';
+            searchResultContainer.style.display = 'block';
+            backToSearchBtn.style.display = 'none';
+            window.scrollTo({ top: lastScrollPosition, behavior: 'auto' });
+        });
+
+        function highlightText(html, keywords) {
+            let tempHtml = html;
+            keywords.forEach(k => {
+                const regex = new RegExp(`(${escapeRegExp(k)})`, 'gi');
+                tempHtml = tempHtml.replace(regex, '<span class="highlight">$1</span>');
+            });
+            return tempHtml;
+        }
+        function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+        
+        document.getElementById('topBtn').addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     </script>
 </body>
