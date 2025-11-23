@@ -174,14 +174,14 @@
             color: #f59e0b;
             width: 180px;
             min-height: 80px;
-            position: relative; /* z-index 적용을 위해 필요 */
-            z-index: 10; /* 우선순위를 높여 다른 요소 위에 렌더링되도록 함 */
+            position: relative; 
+            z-index: 10; /* 우선순위 확보 */
             
-            /* 마름모 생성: 사각형의 네 꼭짓점을 중앙으로 이동 */
+            /* 마름모 생성 */
             -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
             clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
             
-            /* 테두리 (3px 주황색) 및 그림자 다시 반영 */
+            /* 테두리 (0 0 0 3px #f59e0b) + 그림자 (0 4px 6px rgba(0,0,0,0.3)) 반영 */
             box-shadow: 0 0 0 3px #f59e0b, 0 4px 6px rgba(0,0,0,0.3); 
             
             display: flex;
@@ -205,11 +205,6 @@
         /* 분기점 아래 기본 화살표 제거 */
         .flow-step.decision::after {
             display: none;
-        }
-        .flow-step.end {
-            border-color: #ef4444; /* Red color */
-            color: #ef4444;
-            border-radius: 20px;
         }
 
         /* 화살표 그리기 (::after) */
