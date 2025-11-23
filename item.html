@@ -1,671 +1,529 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>인벤토리 · 요청서 (item.html)</title>
-  <style>
-    :root{
-      --ink:#0b2239; --muted:#64748b; --bd:#e5e7eb; --panel:#ffffff; --panel-2:#f8fafc; --accent:#2563eb;
-      --ok:#16a34a; --warn:#eab308; --danger:#dc2626; --shadow:0 6px 24px rgba(2,6,23,.08);
-      --radius:16px;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+<title>소모품 관리</title>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<style>
+  /* [통일된 테마 변수] */
+  :root {
+    --hdr: 60px;
+    /* Light Mode (기본) */
+    --bg: #f4fbff; --ink: #0b2239; --muted: #64748b;
+    --card-bg: #ffffff; --bd: #e2e8f0; --input-bg: #fff;
+    --primary: #2563eb; --danger: #ef4444; --success: #10b981;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --radius: 16px;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1622; --ink: #e6eef6; --muted: #94a3b8;
+      --card-bg: #162032; --bd: rgba(255,255,255,0.1); --input-bg: #0d1b2a;
+      --primary: #38bdf8; --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0; color:var(--ink); background:linear-gradient(180deg,#f9fafb,#eef2f7 50%,#eef2f7); font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Helvetica,Arial,sans-serif}
-    .appbar{position:sticky; top:0; z-index:5; backdrop-filter:saturate(1.2) blur(10px); background:rgba(255,255,255,.7); border-bottom:1px solid var(--bd)}
-    .appbar .inner{display:flex; gap:12px; align-items:center; padding:12px 16px; max-width:1200px; margin:0 auto}
-    .brand{display:flex; gap:10px; align-items:center; font-weight:700}
-    .brand .dot{width:12px; height:12px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.2)}
-    .tabs{margin-left:auto; display:flex; gap:6px}
-    .tab{border:1px solid var(--bd); background:var(--panel); padding:8px 12px; border-radius:999px; cursor:pointer}
-    .tab[aria-selected="true"]{background:var(--ink); color:#fff}
+  }
 
-    .wrap{max-width:1200px; margin:18px auto; padding:0 16px 48px}
-    .panel{background:var(--panel); border:1px solid var(--bd); border-radius:var(--radius); box-shadow:var(--shadow)}
-    .toolbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:12px; border-bottom:1px solid var(--bd); background:var(--panel-2); border-radius:var(--radius) var(--radius) 0 0}
-    .toolbar .spacer{flex:1}
-    .toolbar input[type="search"]{width:260px; max-width:100%; padding:10px 12px; border:1px solid var(--bd); border-radius:10px; background:#fff}
-    .btn{display:inline-flex; align-items:center; gap:8px; padding:9px 12px; border:1px solid var(--bd); border-radius:10px; background:#fff; cursor:pointer}
-    .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
-    .btn.ghost{background:transparent}
-    .btn.warn{background:#fff7ed; border-color:#fed7aa}
-    .btn:disabled{opacity:.6; cursor:not-allowed}
-    .select, .number{padding:9px 10px; border:1px solid var(--bd); border-radius:10px; background:#fff}
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Pretendard", sans-serif; font-size: 15px; display: flex; flex-direction: column; height: 100vh; }
+  
+  i.ph { font-size: 18px; vertical-align: middle; }
+  
+  /* 헤더 통일 */
+  .appbar { 
+    background: var(--card-bg); border-bottom: 1px solid var(--bd); 
+    padding: 0 16px; height: var(--hdr); display: flex; align-items: center; 
+    justify-content: space-between; flex-shrink: 0; position: sticky; top: 0; z-index: 50; 
+  }
+  .brand { font-weight: 800; font-size: 18px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+  
+  /* 탭바 통일 */
+  .tab-bar { background: var(--card-bg); border-bottom: 1px solid var(--bd); display: flex; padding: 0 16px; gap: 24px; flex-shrink: 0; overflow-x: auto; }
+  .tab { padding: 14px 4px; color: var(--muted); font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: .2s; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
 
-    .table{width:100%; border-collapse:separate; border-spacing:0}
-    .table th,.table td{padding:10px 12px; border-bottom:1px solid var(--bd); vertical-align:middle}
-    .table thead th{position:sticky; top:0; background:#fff; z-index:1}
-    .table tr:hover td{background:#fafafa}
-    .avatar{width:44px; height:44px; border-radius:10px; object-fit:cover; background:#eef2f7; border:1px solid var(--bd)}
-    .chip{display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid var(--bd); background:#fff}
-    .qty.low{color:#b45309}
-    .qty.zero{color:var(--danger); font-weight:700}
-    .qty.ok{color:var(--ok)}
-    .row-actions{display:flex; gap:8px}
+  .main-area { flex: 1; overflow-y: auto; padding: 16px; max-width: 1200px; margin: 0 auto; width: 100%; }
+  .view-panel { display: none; animation: fadeIn 0.2s ease-out; }
+  .view-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    .grid{display:grid; grid-template-columns:1fr 360px; gap:16px}
-    @media (max-width: 960px){ .grid{grid-template-columns:1fr} }
+  /* 입력창 및 버튼 */
+  .toolbar { display: flex; gap: 8px; margin-bottom: 16px; position: sticky; top: 0; z-index: 40; background: var(--bg); padding-bottom: 8px; }
+  .input-wrap { position: relative; width: 100%; }
+  .input-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 18px; }
+  .input { 
+    height: 44px; padding: 0 14px 0 40px; border: 1px solid var(--bd); 
+    border-radius: var(--radius); width: 100%; background: var(--input-bg); 
+    color: var(--ink); font-size: 15px; transition: border-color 0.2s;
+  }
+  .input:focus { border-color: var(--primary); }
+  
+  .btn { height: 44px; padding: 0 18px; border-radius: var(--radius); border: 1px solid var(--bd); background: var(--card-bg); color: var(--ink); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  
+  /* 리스트 카드 통일 */
+  .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+  @media (max-width: 480px) { .grid-container { grid-template-columns: 1fr; } }
 
-    .pagination{display:flex; gap:8px; align-items:center; justify-content:flex-end; padding:12px}
-    .hidden{display:none}
+  .list-card { 
+    background: var(--card-bg); border: 1px solid var(--bd); border-radius: var(--radius); 
+    padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow); 
+    height: 100%; transition: transform 0.1s;
+  }
+  .list-card:active { transform: scale(0.99); }
+  
+  .card-body { display: flex; gap: 14px; align-items: flex-start; flex: 1; }
+  .avatar { width: 64px; height: 64px; border-radius: 12px; background: var(--bg); object-fit: cover; flex-shrink: 0; border: 1px solid var(--bd); }
+  
+  .card-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .card-title { font-weight: 700; font-size: 16px; color: var(--ink); line-height: 1.3; }
+  .card-meta { font-size: 14px; color: var(--muted); }
+  .card-price { font-size: 13px; font-weight: 600; color: var(--primary); background: rgba(37, 99, 235, 0.1); padding: 4px 8px; border-radius: 6px; width: fit-content; margin-top: 4px; }
 
-    @media (max-width: 720px){
-      .table{display:none}
-      .cards{display:grid; gap:10px; padding:12px}
-      .card{border:1px solid var(--bd); border-radius:12px; background:#fff; padding:10px; display:grid; grid-template-columns:54px 1fr; gap:10px}
-      .card .row-actions{justify-content:flex-end}
-    }
+  /* 액션바 */
+  .card-actions { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--bd); padding-top: 12px; margin-top: auto; }
+  .stock-box { display: flex; align-items: center; background: var(--bg); border: 1px solid var(--bd); border-radius: 8px; padding: 2px; }
+  .btn-mini { width: 36px; height: 36px; border: none; background: transparent; cursor: pointer; color: var(--muted); font-size: 18px; display:flex; align-items:center; justify-content:center;}
+  .val-disp { font-weight: 700; min-width: 36px; text-align: center; font-size: 15px; color: var(--ink); }
 
-    .hint{font-size:12px; color:var(--muted)}
-    .danger{color:var(--danger)}
-    .ok{color:var(--ok)}
-    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; background:#eef2f7; border:1px solid var(--bd); padding:2px 6px; border-radius:6px}
+  /* 모달 통일 */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .modal-overlay.open { display: flex; }
+  .modal-box { width: min(420px, 92vw); background: var(--card-bg); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); border: 1px solid var(--bd); }
+  .modal-head { padding: 18px 24px; border-bottom: 1px solid var(--bd); font-weight: 700; font-size: 17px; display: flex; justify-content: space-between; align-items: center; color: var(--ink); }
+  .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; color: var(--ink); }
+  .modal-foot { padding: 16px 24px; background: var(--bg); border-top: 1px solid var(--bd); display: flex; justify-content: flex-end; gap: 10px; }
+  
+  .form-grid { display: grid; gap: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
 
-    .dropzone{border:1px dashed var(--bd); border-radius:10px; padding:12px; text-align:center; color:var(--muted)}
+  #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e293b; color: #fff; padding: 12px 24px; border-radius: 30px; font-weight: 600; opacity: 0; transition: .3s; pointer-events: none; z-index: 200; display: flex; align-items: center; gap: 8px; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  
+  /* Pager */
+  .pager { display: flex; justify-content: center; gap: 12px; margin-top: 24px; align-items: center; color: var(--ink); }
+  .btn-float { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.4); z-index: 90; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 24px; }
+/* --- [새로 추가된 라이트박스 스타일] --- */
+  #lightbox {
+    position: fixed; inset: 0; z-index: 2000;
+    background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    padding: 20px; /* 모바일에서 꽉 차지 않게 여백 */
+  }
+  #lightbox.show { opacity: 1; pointer-events: auto; }
 
-    /* Modal */
-    .modal-backdrop{position:fixed; inset:0; background:rgba(2,6,23,.45); backdrop-filter: blur(4px); display:flex; align-items:center; justify-content:center; z-index:50}
-    .modal{width:min(720px,92vw); background:var(--panel); border:1px solid var(--bd); border-radius:20px; box-shadow:var(--shadow); overflow:hidden}
-    .modal header{display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--bd); background:var(--panel-2)}
-    .modal header h3{margin:0; font-size:16px}
-    .modal .body{padding:14px 16px}
-    .modal .grid2{display:grid; grid-template-columns:140px 1fr; gap:14px}
-    @media (max-width:640px){ .modal .grid2{grid-template-columns:1fr} }
-    .modal .thumb{width:120px; height:120px; border-radius:14px; object-fit:cover; border:1px solid var(--bd); background:#f1f5f9}
-    .modal .row{display:grid; gap:6px}
-    .modal label{font-size:12px; color:var(--muted)}
-    .modal input[type=\"text\"], .modal input[type=\"number\"], .modal textarea, .modal select{width:100%; padding:10px 12px; border:1px solid var(--bd); border-radius:10px; background:#fff}
-    .modal footer{display:flex; gap:8px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--bd); background:var(--panel-2)}
-    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .lightbox-content {
+    position: relative;
+    max-width: 100%; max-height: 100%;
+    transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* 뿅 하고 나타나는 효과 */
+    display: flex; justify-content: center; align-items: center;
+  }
+  #lightbox.show .lightbox-content { transform: scale(1); }
 
-    /* highlight animation */
-    .hi{animation:hi 1.4s ease; background:#fff7ed}
-    @keyframes hi{0%{background:#ffedd5}60%{background:#fff7ed}100%{background:transparent}}
-  </style>
+  #lightboxImg {
+    max-width: 100%; max-height: 90vh; /* 화면 높이의 90%까지만 */
+    object-fit: contain;
+    border-radius: 12px; /* 이미지 모서리 둥글게 */
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4); /* 깊이감 있는 그림자 */
+  }
+
+  .lightbox-close {
+    position: absolute; top: -20px; right: -20px;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); color: #fff; border: none;
+    font-size: 24px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: 0.2s; backdrop-filter: blur(4px);
+  }
+  .lightbox-close:hover { background: rgba(255,255,255,0.4); transform: scale(1.1); }
+  /* 모바일에서는 닫기 버튼 위치 조정 */
+  @media (max-width: 480px) {
+    .lightbox-close { top: 10px; right: 10px; background: rgba(0,0,0,0.5); }
+  }
+  /* ------------------------------------ */
+</style>
 </head>
 <body>
-  <header class="appbar" role="banner">
-    <div class="inner">
-      <div class="brand" aria-label="재고관리">
-        <span class="dot" aria-hidden="true"></span>
-        <span>item.html</span>
+
+<header class="appbar">
+  <div class="brand"><i class="ph-fill ph-package"></i> 소모품 관리</div>
+  <button class="btn" style="height:36px; padding:0 12px; border:none; background:#f1f5f9; color:var(--muted);" onclick="forceReload()">
+    <i class="ph-bold ph-arrows-clockwise"></i> 동기화
+  </button>
+</header>
+<nav class="tab-bar">
+  <div class="tab active" onclick="goTab('tab-inv')"><i class="ph ph-list-dashes"></i>재고 목록</div>
+  <div class="tab" onclick="goTab('tab-req')"><i class="ph ph-shopping-cart"></i>구매 요청</div>
+  <div class="tab" onclick="goTab('tab-out')"><i class="ph ph-export"></i>불출 내역</div>
+</nav>
+
+<main class="main-area">
+  <section id="tab-inv" class="view-panel active">
+    <div class="toolbar">
+      <div class="input-wrap">
+        <i class="ph ph-magnifying-glass"></i>
+        <input type="search" id="searchBox" class="input" placeholder="물품명, 규격 검색..." oninput="renderPage(1)">
       </div>
-      <nav class="tabs" role="tablist" aria-label="페이지 전환">
-        <button class="tab" role="tab" aria-selected="true" id="tab-inv" data-target="view-inventory">인벤토리</button>
-        <button class="tab" role="tab" aria-selected="false" id="tab-req" data-target="view-requests">요청서</button>
-      </nav>
     </div>
-  </header>
+    
+    <div id="skeletonLoader" style="display:none; padding:40px; text-align:center; color:var(--muted);">
+      <i class="ph ph-spinner-gap ph-spin" style="font-size:32px; margin-bottom:8px;"></i><br>데이터 불러오는 중...
+    </div>
+    
+    <div id="invList" class="grid-container"></div>
+    
+    <div class="pager">
+      <button class="btn" onclick="movePage(-1)"><i class="ph-bold ph-caret-left"></i></button>
+      <span id="pageInfo" style="font-weight:600; color:var(--muted)">1 / 1</span>
+      <button class="btn" onclick="movePage(1)"><i class="ph-bold ph-caret-right"></i></button>
+    </div>
+    <button class="btn-float" onclick="openItemModal()"><i class="ph-bold ph-plus"></i></button>
+  </section>
 
-  <main class="wrap" id="app" aria-live="polite">
-    <!-- INVENTORY VIEW -->
-    <section id="view-inventory" class="panel" role="region" aria-label="인벤토리">
-      <div class="toolbar">
-        <input id="q" type="search" placeholder="검색: 물품명, 사용기기… (⌘/Ctrl + K)" aria-label="검색" />
-        <select id="filterDevice" class="select" aria-label="사용기기 필터">
-          <option value="">전체 기기</option>
-        </select>
-        <label class="chip"><input id="onlyLow" type="checkbox" /> 재고 임계치 이하</label>
-        <div class="spacer"></div>
-        <button id="btnAdd" class="btn">+ 새 물품</button>
-        <button id="btnImport" class="btn">가져오기</button>
-        <button id="btnPaste" class="btn">엑셀 붙여넣기</button>
-        <button id="btnExport" class="btn">내보내기(전체)</button>
-        <button id="btnUndo" class="btn ghost" title="⌘/Ctrl+Z">되돌리기</button>
-        <button id="btnRedo" class="btn ghost" title="⌘/Ctrl+Shift+Z">다시실행</button>
-        <button id="btnBulkToReq" class="btn" title="선택 항목 요청담기">선택 요청담기</button>
-        <button id="btnBulkDel" class="btn warn" title="선택 항목 삭제">선택 삭제</button>
-        <label class="chip" title="현재 페이지 전체 선택"><input id="selectAll" type="checkbox" /> 전체선택</label>
-        <input id="fileImport" type="file" accept=".json,.csv,image/*" class="hidden" />
+  <section id="tab-req" class="view-panel">
+    <div class="toolbar">
+      <div style="font-weight:700; font-size:16px; display:flex; align-items:center; gap:6px;">
+        <i class="ph-fill ph-shopping-cart"></i> 구매 요청 현황
       </div>
+      <div style="flex:1"></div>
+      <button class="btn" style="height:36px;" onclick="loadLogs('req', 1)"><i class="ph-bold ph-arrows-clockwise"></i></button>
+    </div>
+    <div id="reqList" class="grid-container"></div>
+    <div class="pager">
+      <button class="btn" onclick="moveLogPage('req', -1)"><i class="ph-bold ph-caret-left"></i></button>
+      <span id="reqPageInfo" style="font-weight:600;">1 / 1</span>
+      <button class="btn" onclick="moveLogPage('req', 1)"><i class="ph-bold ph-caret-right"></i></button>
+    </div>
+  </section>
 
-      <!-- Desktop Table -->
-      <div style="overflow:auto; max-height: 60vh">
-        <table class="table" aria-label="재고 테이블">
-          <thead>
-            <tr>
-              <th style="width:36px"><input type="checkbox" id="thSelect" aria-label="전체 선택" /></th>
-              <th style="width:64px">사진</th>
-              <th data-sort="name" aria-sort="none" style="cursor:pointer">물품명</th>
-              <th data-sort="device" aria-sort="none" style="cursor:pointer">사용기기</th>
-              <th style="width:120px; cursor:pointer" data-sort="qty" aria-sort="none">재고량</th>
-              <th style="width:140px; cursor:pointer" data-sort="threshold" aria-sort="none">추가중</th>
-              <th style="width:220px">비고</th>
-              <th style="width:200px">작업</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-
-        <!-- Mobile Cards -->
-        <div class="cards" id="cards" aria-label="재고 카드 목록" hidden></div>
+  <section id="tab-out" class="view-panel">
+    <div class="toolbar">
+      <div style="font-weight:700; font-size:16px; display:flex; align-items:center; gap:6px;">
+        <i class="ph-fill ph-export"></i> 불출(사용) 이력
       </div>
+      <div style="flex:1"></div>
+      <button class="btn" style="height:36px;" onclick="loadLogs('out', 1)"><i class="ph-bold ph-arrows-clockwise"></i></button>
+    </div>
+    <div id="outList" class="grid-container"></div>
+    <div class="pager">
+      <button class="btn" onclick="moveLogPage('out', -1)"><i class="ph-bold ph-caret-left"></i></button>
+      <span id="outPageInfo" style="font-weight:600;">1 / 1</span>
+      <button class="btn" onclick="moveLogPage('out', 1)"><i class="ph-bold ph-caret-right"></i></button>
+    </div>
+  </section>
+</main>
 
-      <div class="pagination">
-        <span class="hint" id="countInfo">0개</span>
-        <div class="spacer"></div>
-        <button class="btn" id="prev">이전</button>
-        <span class="chip" id="pageInfo">1 / 1</span>
-        <button class="btn" id="next">다음</button>
-        <select id="pageSize" class="select" aria-label="페이지 크기">
-          <option>20</option>
-          <option selected>30</option>
-          <option>50</option>
-          <option>100</option>
-        </select>
-      </div>
+<div id="lightbox">
+  <div class="lightbox-content">
+    <img id="lightboxImg" src="">
+    <button class="lightbox-close" onclick="closeLightbox()"><i class="ph-bold ph-x"></i></button>
+  </div>
+</div>
 
-      <div class="hint" style="padding: 8px 12px 16px">
-        사진 셀을 클릭하면 모달 편집창이 열립니다. 모든 변경은 자동 저장되고 <span class="kbd">localStorage</span> 및 <span class="kbd">postMessage</span>로 동기화돼요.
-        <button id="seedDemo" class="btn ghost">데모 120개 채우기</button>
+<div id="itemModal" class="modal-overlay"><div class="modal-box">
+  <div class="modal-head"><span>물품 정보</span><button class="btn-mini" onclick="closeModal('itemModal')"><i class="ph-bold ph-x"></i></button></div>
+  <div class="modal-body"><input type="hidden" id="editId">
+    <div class="form-grid">
+      <div class="field"><label>물품명</label><input id="editName" class="input"></div>
+      <div class="field"><label>규격 / 기기</label><div style="display:flex; gap:8px;"><input id="editSpec" class="input" placeholder="규격"><input id="editDevice" class="input" placeholder="기기"></div></div>
+      <div class="field"><label>현재 재고</label><input id="editQty" type="number" class="input"></div>
+      <div class="field" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div><label>업체 단가</label><input id="editCostV" class="input" placeholder="0"></div>
+        <div><label>인터넷 단가</label><input id="editCostI" class="input" placeholder="0"></div>
       </div>
-    </section>
-
-    <!-- REQUESTS VIEW -->
-    <section id="view-requests" class="panel hidden" role="region" aria-label="요청서">
-      <div class="grid">
-        <div>
-          <div class="toolbar">
-            <strong>요청서 작성</strong>
-            <div class="spacer"></div>
-            <button class="btn" id="btnImportReq">가져오기(JSON)</button>
-            <button class="btn" id="btnExportReq">내보내기(JSON)</button>
-          </div>
-          <div style="padding:12px">
-            <div id="reqList" class="cards" aria-label="요청 품목"></div>
-            <p class="hint">인벤토리에서 품목을 선택해 요청바구니에 담고 수량을 조정하세요.</p>
-          </div>
-        </div>
-        <aside class="panel" style="border:none; box-shadow:none">
-          <div class="toolbar"><strong>바구니</strong><div class="spacer"></div><button class="btn primary" id="btnCopyLink">링크 복사</button></div>
-          <div style="padding:12px">
-            <div id="cart"></div>
-            <hr style="border:none;border-top:1px solid var(--bd);margin:12px 0" />
-            <label>요청 사유</label>
-            <textarea id="reqNote" rows="4" style="width:100%; padding:10px; border:1px solid var(--bd); border-radius:10px"></textarea>
-            <div style="display:flex; gap:8px; margin-top:12px">
-              <button class="btn primary" id="btnSubmit">요청서 제출 (로컬)</button>
-              <button class="btn" id="btnClear">비우기</button>
-            </div>
-            <p class="hint">실제 전송 연동은 <span class="kbd">window.postMessage</span> 또는 REST API 연결 훅으로 구성했습니다.</p>
-          </div>
-        </aside>
-      </div>
-    </section>
-  </main>
-
-  <!-- Edit Modal -->
-  <div id="modalWrap" class="modal-backdrop" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
-      <header>
-        <h3 id="editTitle">품목 편집</h3>
-        <span class="spacer" style="flex:1"></span>
-        <button class="btn" id="btnCloseModal" aria-label="닫기">✕</button>
-      </header>
-      <div class="body">
-        <div class="grid2">
-          <div class="row" style="align-items:center">
-            <img id="editThumb" class="thumb" alt="품목 사진 미리보기" />
-            <div>
-              <button class="btn" id="btnPickThumb">사진 변경</button>
-              <input type="file" id="editFile" accept="image/*" class="hidden" />
-            </div>
-          </div>
-          <div class="row">
-            <div class="row">
-              <label for="editName">물품명</label>
-              <input id="editName" type="text" placeholder="예: pH 버퍼 용액 4.01" />
-            </div>
-            <div class="row">
-              <label for="editDevice">사용기기</label>
-              <input id="editDevice" type="text" placeholder="예: 수질 측정기 A" list="deviceList" />
-              <datalist id="deviceList"></datalist>
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
-              <div class="row">
-                <label for="editQty">재고량</label>
-                <input id="editQty" type="number" inputmode="numeric" min="0" step="1" />
-              </div>
-              <div class="row">
-                <label for="editThreshold">임계치</label>
-                <input id="editThreshold" type="number" inputmode="numeric" min="0" step="1" />
-              </div>
-            </div>
-            <div class="row">
-              <label for="editMemo">비고</label>
-              <textarea id="editMemo" rows="3" placeholder="메모"></textarea>
-            </div>
-          </div>
-        </div>
-      </div>
-      <footer>
-        <button class="btn warn" id="btnDelete">삭제</button>
-        <span class="spacer" style="flex:1"></span>
-        <button class="btn" id="btnCancel">취소</button>
-        <button class="btn primary" id="btnSave">저장</button>
-      </footer>
+      <div class="field"><label>구매 링크</label><input id="editLink" class="input" placeholder="https://..."></div>
+      <div class="field"><label>사진</label><div style="display:flex; gap:8px;"><input id="editImg" class="input" readonly placeholder="이미지 코드" style="color:#999; font-size:11px;"><label class="btn">📷<input type="file" hidden onchange="processImg(this)"></label></div></div>
     </div>
   </div>
+  <div class="modal-foot">
+    <button class="btn danger" id="btnDel" onclick="deleteItem()"><i class="ph-bold ph-trash"></i> 삭제</button>
+    <div style="flex:1"></div>
+    <button class="btn primary" onclick="saveItem()"><i class="ph-bold ph-check"></i> 저장</button>
+  </div>
+</div></div>
 
-  <!-- Paste Modal -->
-  <div id="pasteWrap" class="modal-backdrop" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pasteTitle">
-      <header>
-        <h3 id="pasteTitle">엑셀/구글시트 붙여넣기</h3>
-        <span class="spacer" style="flex:1"></span>
-        <button class="btn" id="btnClosePaste" aria-label="닫기">✕</button>
-      </header>
-      <div class="body">
-        <p class="hint">첫 행에 헤더를 두면 자동 인식합니다. (예: <b>물품명</b>, <b>사용기기</b>, 재고량, 비고)</p>
-        <textarea id="pasteText" rows="10" style="width:100%; padding:10px; border:1px solid var(--bd); border-radius:10px" placeholder="물품명\t사용기기\t재고량\t비고"></textarea>
+<div id="outModal" class="modal-overlay"><div class="modal-box">
+  <div class="modal-head"><span>📉 불출 처리</span><button class="btn-mini" onclick="closeModal('outModal')"><i class="ph-bold ph-x"></i></button></div>
+  <div class="modal-body">
+    <h3 id="outName" style="margin:0 0 4px 0;"></h3><div id="outSpec" style="color:var(--muted); font-size:13px; margin-bottom:20px;"></div>
+    <div class="form-grid">
+      <div class="field"><label>사용자 이름</label><input id="outWho" class="input" placeholder="누가 가져가나요?"></div>
+      <div class="field"><label>수량</label>
+        <div class="stock-box" style="justify-content:center; padding:8px; height:44px;">
+          <button class="btn-mini minus" onclick="adjVal('outQty',-1)"><i class="ph-bold ph-minus"></i></button>
+          <input id="outQty" readonly value="1" style="width:60px; text-align:center; border:none; background:transparent; font-weight:800; font-size:18px;">
+          <button class="btn-mini" onclick="adjVal('outQty',1)"><i class="ph-bold ph-plus"></i></button>
+        </div>
       </div>
-      <footer>
-        <button class="btn" id="btnPasteCancel">취소</button>
-        <button class="btn primary" id="btnPasteApply">적용</button>
-      </footer>
     </div>
   </div>
+  <div class="modal-foot"><button class="btn danger" onclick="confirmCheckout()" style="width:100%">확인</button></div>
+</div></div>
 
-  <!-- Templates -->
-  <template id="rowTpl">
-    <tr>
-      <td><input type="checkbox" class="rowSel" aria-label="항목 선택"></td>
-      <td><img class="avatar" alt="사진"/></td>
-      <td data-key="name" contenteditable="false"></td>
-      <td data-key="device" contenteditable="false"></td>
-      <td data-key="qty" contenteditable="false" style="text-align:right"></td>
-      <td data-key="threshold" contenteditable="false" style="text-align:right"></td>
-      <td data-key="memo" contenteditable="false"></td>
-      <td>
-        <div class="row-actions">
-          <button class="btn" data-act="edit">편집</button>
-          <button class="btn" data-act="toReq">요청담기</button>
-          <button class="btn warn" data-act="del">삭제</button>
-        </div>
-      </td>
-    </tr>
-  </template>
-
-  <template id="cardTpl">
-    <div class="card">
-      <img class="avatar" alt="사진"/>
-      <div>
-        <div style="display:flex; gap:8px; align-items:center; justify-content:space-between">
-          <strong data-key="name">품목</strong>
-          <span class="chip" data-key="device">기기</span>
-        </div>
-        <div style="display:flex; gap:12px; align-items:center; margin:6px 0">
-          <span>재고: <b class="qty" data-key="qty">0</b></span>
-          <span class="hint">추가중: <span data-key="threshold">0</span></span>
-        </div>
-        <div class="hint" data-key="memo">-</div>
-        <div class="row-actions" style="margin-top:8px">
-          <button class="btn" data-act="edit">편집</button>
-          <button class="btn" data-act="toReq">요청담기</button>
-          <button class="btn warn" data-act="del">삭제</button>
+<div id="reqModal" class="modal-overlay"><div class="modal-box">
+  <div class="modal-head"><span>🛒 구매 요청</span><button class="btn-mini" onclick="closeModal('reqModal')"><i class="ph-bold ph-x"></i></button></div>
+  <div class="modal-body">
+    <h3 id="reqName" style="margin:0 0 4px 0;"></h3><div id="reqSpec" style="color:var(--muted); font-size:13px; margin-bottom:20px;"></div>
+    <div class="form-grid">
+      <div class="field"><label>요청자</label><input id="reqWho" class="input" placeholder="이름을 입력하세요"></div>
+      <div class="field"><label>필요 사유 (비고)</label><input id="reqNote" class="input" placeholder="예: 재고 부족, 예비품"></div>
+      <div class="field"><label>요청 수량</label>
+        <div class="stock-box" style="justify-content:center; padding:8px; height:44px;">
+          <button class="btn-mini minus" onclick="adjVal('reqQty',-1)"><i class="ph-bold ph-minus"></i></button>
+          <input id="reqQty" readonly value="1" style="width:60px; text-align:center; border:none; background:transparent; font-weight:800; font-size:18px;">
+          <button class="btn-mini" onclick="adjVal('reqQty',1)"><i class="ph-bold ph-plus"></i></button>
         </div>
       </div>
     </div>
-  </template>
+  </div>
+  <div class="modal-foot"><button class="btn primary" onclick="confirmReq()" style="width:100%">요청 전송</button></div>
+</div></div>
 
-  <script>
-  ;(() => {
-    const LS_KEY = 'inventory.v1';
-    const REQ_KEY = 'requests.v1';
+<div id="toast"><i class="ph-fill ph-check-circle"></i> <span>메시지</span></div>
 
-    // 정렬/선택 상태
-    let sortKey = 'name';
-    let sortDir = 'asc';
-    const selected = new Set();
+<script>
+// *** 본인의 구글 웹앱 URL ***
+const APP_URL = "https://script.google.com/macros/s/AKfycbw0IzxOyswXNl8p7E9mNt8mCKOAXFZfXcjhpse9mBvyLFJ6pkLHJYo_a27M73h8CKWfSA/exec";
 
-    // 데이터
-    let items = load(LS_KEY, []);
-    let cart = load(REQ_KEY, {list:[], note:''});
-    let page = 1; let pageSize = 30; let query = ''; let onlyLow = false; let deviceFilter = '';
-    let currentId = null;
+// 상태 변수
+let inventory = JSON.parse(localStorage.getItem('local_inv') || '[]');
+let imgCache = JSON.parse(localStorage.getItem('local_img') || '{}');
+let curPage = 1, curReqPage = 1, curOutPage = 1;
+const ITEMS_PER_PAGE = 12; // 그리드 형태니까 한 페이지에 더 많이 보여줌
+const $ = s => document.querySelector(s);
+const num = n => n ? Number(n).toLocaleString() : '';
+const toast = m => { const t = $('#toast'); t.querySelector('span').textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2000); };
+const fmtDate = d => { if(!d) return '-'; const dt = new Date(d); return `${dt.getFullYear()}.${dt.getMonth()+1}.${dt.getDate()}`; };
 
-    // 히스토리(Undo/Redo)
-    let history = []; let hIndex = -1;
-    const snapshot = () => ({ items: JSON.parse(JSON.stringify(items)), cart: JSON.parse(JSON.stringify(cart)) });
-    const pushHistory = () => { history = history.slice(0, hIndex+1); history.push(snapshot()); hIndex = history.length-1; };
-    const applyState = (st) => { items = st.items; cart = st.cart; save(LS_KEY, items); save(REQ_KEY, cart); render(); renderCart(); };
-    const undo = () => { if(hIndex>0){ hIndex--; applyState(JSON.parse(JSON.stringify(history[hIndex]))); }};
-    const redo = () => { if(hIndex < history.length-1){ hIndex++; applyState(JSON.parse(JSON.stringify(history[hIndex]))); }};
+function init() { renderPage(1); syncData(); }
 
-    const $ = (s, el=document) => el.querySelector(s);
-    const $$ = (s, el=document) => Array.from(el.querySelectorAll(s));
-
-    const tbody = $('#tbody');
-    const cards = $('#cards');
-
-    function save(key, data){ localStorage.setItem(key, JSON.stringify(data)); }
-    function load(key, def){ try{ return JSON.parse(localStorage.getItem(key)) ?? def }catch{ return def } }
-    function uid(){ return Math.random().toString(36).slice(2,9) }
-    function toInt(x){ const n = parseInt(x,10); return Number.isFinite(n)? n: 0 }
-    function statusClass(q, t){ if(q <= 0) return 'zero'; if(q <= t) return 'low'; return 'ok' }
-    function pendingFor(id){ const ex = cart.list.find(x=>x.id===id); return ex ? toInt(ex.count) : 0 }
-    function sendBridge(){ try { window.parent?.postMessage({type:'inventoryUpdated', payload: items}, '*') } catch {} document.dispatchEvent(new CustomEvent('inventory:changed', {detail: items})) }
-    function updateDevicesFilterOptions(){ const sel = $('#filterDevice'); const set = new Set(items.map(i=>i.device).filter(Boolean)); const cur = sel.value; sel.innerHTML = '<option value=\"\">전체 기기</option>' + Array.from(set).sort((a,b)=>a.localeCompare(b,'ko')).map(d=>`<option ${d===cur?'selected':''}>${d}</option>`).join(''); }
-
-    function filtered(){
-      let arr = items.filter(i=>{
-        const q = query.trim().toLowerCase();
-        const okQ = !q || [i.name, i.device, i.memo].some(v=>String(v||'').toLowerCase().includes(q));
-        const okD = !deviceFilter || i.device===deviceFilter;
-        const okL = !onlyLow || (toInt(i.qty) <= toInt(i.threshold));
-        return okQ && okD && okL;
-      });
-      arr.sort((a,b)=>{
-        const va = (a[sortKey]??'');
-        const vb = (b[sortKey]??'');
-        const cmp = (typeof va==='number'||typeof vb==='number') ? (toInt(va)-toInt(vb)) : String(va).localeCompare(String(vb),'ko');
-        return sortDir==='asc'? cmp : -cmp;
-      });
-      return arr;
+function syncData() {
+  if(inventory.length === 0) $('#skeletonLoader').style.display = 'block';
+  jsonp(`${APP_URL}?op=read_text_data`, (res) => {
+    $('#skeletonLoader').style.display = 'none';
+    if(res.status === 'success') {
+      inventory = res.data;
+      localStorage.setItem('local_inv', JSON.stringify(inventory));
+      renderPage(curPage);
+      toast("데이터 동기화 완료");
     }
-    function paginate(arr){ const start = (page-1) * pageSize; return arr.slice(start, start + pageSize); }
+  });
+}
+function forceReload() { localStorage.removeItem('local_inv'); location.reload(); }
 
-    function render(){
-      const arr = filtered();
-      const pageArr = paginate(arr);
-      const total = arr.length;
+// 사진 확대 기능
+// 사진 확대 기능 (개선됨)
+function zoomImg(src) {
+  if(!src || src.includes('base64,R0')) return; // 기본이미지 제외
+  const lb = $('#lightbox');
+  const img = $('#lightboxImg');
+  
+  // 이미지 로딩 전까지 기존 이미지 숨김 (깜빡임 방지)
+  img.style.opacity = '0';
+  img.src = src;
+  
+  img.onload = () => { img.style.opacity = '1'; };
+  lb.classList.add('show');
+}
 
-      tbody.innerHTML = '';
-      // 선택 초기화
-      selected.clear();
-      const _thSel = document.getElementById('thSelect');
-      const _selAll = document.getElementById('selectAll');
-      if(_thSel) _thSel.checked = false;
-      if(_selAll) _selAll.checked = false;
+function closeLightbox() {
+  $('#lightbox').classList.remove('show');
+  // 닫을 때 src를 비워 다음 열 때 이전 이미지가 잠깐 보이는 것 방지
+  setTimeout(() => { $('#lightboxImg').src = ''; }, 300);
+}
 
-      for(const it of pageArr){
-        const tr = document.importNode($('#rowTpl').content, true);
-        const row = tr.querySelector('tr');
-        const img = tr.querySelector('img');
-        img.src = it.img || '';
-        img.dataset.id = it.id; row.dataset.id = it.id;
-        row.querySelector('[data-key="name"]').textContent = it.name || '';
-        row.querySelector('[data-key="device"]').textContent = it.device || '';
-        const qtyEl = row.querySelector('[data-key="qty"]');
-        qtyEl.textContent = it.qty ?? 0;
-        qtyEl.className = 'qty ' + statusClass(toInt(it.qty), toInt(it.threshold||0));
-        row.querySelector('[data-key="threshold"]').textContent = pendingFor(it.id);
-        row.querySelector('[data-key="memo"]').textContent = it.memo || '';
+// 라이트박스 배경 클릭 시 닫기 이벤트 등록
+document.getElementById('lightbox').addEventListener('click', function(e) {
+  // 이미지 자체나 닫기 버튼을 클릭한 경우는 제외하고 배경 클릭만 감지
+  if (e.target === this || e.target.classList.contains('lightbox-content')) {
+    closeLightbox();
+  }
+});
 
-        // 행 선택 체크박스 바인딩
-        const _cb = row.querySelector('.rowSel');
-        if(_cb){ _cb.addEventListener('change', (ev)=>{ const checked = ev.target.checked; if(checked) selected.add(it.id); else selected.delete(it.id); }); }
+function renderPage(page) {
+  curPage = page;
+  const q = $('#searchBox').value.toLowerCase();
+  const filtered = inventory.filter(i => (i.name+i.spec+i.device).toLowerCase().includes(q));
+  
+  const total = filtered.length;
+  const maxPage = Math.ceil(total / ITEMS_PER_PAGE) || 1;
+  if(curPage > maxPage) curPage = maxPage; if(curPage < 1) curPage = 1;
+  
+  const start = (curPage-1) * ITEMS_PER_PAGE;
+  const pageItems = filtered.slice(start, start + ITEMS_PER_PAGE);
+  
+  $('#invList').innerHTML = pageItems.map(i => {
+    const imgSrc = imgCache[i.id] || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    return `
+    <div class="list-card">
+      <div class="card-body">
+        <img src="${imgSrc}" class="avatar" onclick="zoomImg('${imgSrc}')">
+        <div class="card-info">
+          <div class="card-title">${i.name}</div>
+          <div class="card-meta"><i class="ph ph-tag"></i> ${i.spec || '-'}</div>
+          <div class="card-meta"><i class="ph ph-desktop"></i> ${i.device || '-'}</div>
+          ${i.cost_vendor || i.cost_inet ? `<div class="card-price">₩ ${num(i.cost_vendor || i.cost_inet)}</div>` : ''}
+        </div>
+      </div>
+      
+      <div class="card-actions">
+        <div class="stock-box">
+          <button class="btn-mini minus" onclick="openOut('${i.id}')"><i class="ph-bold ph-minus"></i></button>
+          <span class="val-disp">${i.qty}</span>
+          <button class="btn-mini" onclick="openItemModal('${i.id}')"><i class="ph-bold ph-pencil-simple"></i></button>
+        </div>
+        <button class="btn primary" style="flex:1; height:40px; font-size:14px;" onclick="openReq('${i.id}')"><i class="ph-bold ph-shopping-cart"></i> 담기</button>
+      </div>
+    </div>`;
+  }).join('') || '<div style="grid-column:1/-1; padding:60px; text-align:center; color:var(--muted);">데이터가 없습니다.</div>';
 
-        tbody.appendChild(tr);
-      }
+  $('#pageInfo').innerText = `${curPage} / ${maxPage}`;
+  loadImages(pageItems);
+}
 
-      const isMobile = matchMedia('(max-width:720px)').matches; $('#cards').hidden = !isMobile;
-      if(isMobile){
-        cards.innerHTML='';
-        for(const it of pageArr){
-          const el = document.importNode($('#cardTpl').content, true);
-          el.querySelector('img').src = it.img || '';
-          el.querySelector('[data-key="name"]').textContent = it.name || '';
-          el.querySelector('[data-key="device"]').textContent = it.device || '';
-          const qtyEl = el.querySelector('[data-key="qty"]');
-          qtyEl.textContent = it.qty ?? 0; qtyEl.className = 'qty ' + statusClass(toInt(it.qty), toInt(it.threshold||0));
-          el.querySelector('[data-key="threshold"]').textContent = pendingFor(it.id);
-          el.querySelector('[data-key="memo"]').textContent = it.memo || '';
-          el.querySelector('img').dataset.id = it.id;
-          cards.appendChild(el);
+function loadImages(items) {
+  const missingIds = items.filter(i => i.hasImg && !imgCache[i.id]).map(i => i.id);
+  if(missingIds.length > 0) {
+    jsonp(`${APP_URL}?op=get_images_batch&ids=${missingIds.join(',')}`, (res) => {
+      if(res.images) {
+        Object.assign(imgCache, res.images);
+        localStorage.setItem('local_img', JSON.stringify(imgCache));
+        for(let id in res.images) { 
+          const el = document.querySelector(`[onclick="openOut('${id}')"]`).closest('.list-card').querySelector('.avatar'); 
+          if(el) el.src = res.images[id]; 
+          el.setAttribute('onclick', `zoomImg('${res.images[id]}')`); // 줌 이벤트 갱신
         }
       }
-
-      $('#pageInfo').textContent = `${page} / ${Math.max(1, Math.ceil(total/pageSize))}`;
-      $('#countInfo').textContent = `${total}개`;
-      $('#prev').disabled = page<=1;
-      $('#next').disabled = page >= Math.ceil(total/pageSize);
-
-      updateDevicesFilterOptions();
-
-      // datalist 업데이트(사용기기 자동완성)
-      const dlist = document.getElementById('deviceList');
-      if(dlist){
-        dlist.innerHTML = Array.from(new Set(items.map(i=>i.device).filter(Boolean)))
-          .sort((a,b)=>a.localeCompare(b,'ko'))
-          .map(d=>`<option value="${d}"></option>`).join('');
-      }
-    }
-
-    function upsert(it){
-      const i = items.findIndex(x=>x.id===it.id);
-      if(i>=0) items[i] = {...items[i], ...it}; else items.unshift(it);
-      pushHistory();
-      save(LS_KEY, items); sendBridge(); render();
-    }
-
-    // Sorting
-    document.querySelectorAll('th[data-sort]').forEach(th=>{
-      th.addEventListener('click', ()=>{
-        const key = th.dataset.sort;
-        sortDir = (sortKey===key && sortDir==='asc') ? 'desc' : 'asc';
-        sortKey = key;
-        document.querySelectorAll('th[data-sort]').forEach(x=>x.setAttribute('aria-sort','none'));
-        th.setAttribute('aria-sort', sortDir==='asc' ? 'ascending' : 'descending');
-        render();
-      });
     });
+  }
+}
 
-    // Modal Editing
-    const modalWrap = $('#modalWrap'); const editThumb = $('#editThumb'); const editFile = $('#editFile'); const editName = $('#editName'); const editDevice = $('#editDevice'); const editQty = $('#editQty'); const editThreshold = $('#editThreshold'); const editMemo = $('#editMemo');
-    function openEdit(it){ currentId = it?.id ?? uid(); editThumb.src = it?.img || ''; editName.value = it?.name || ''; editDevice.value = it?.device || ''; editQty.value = toInt(it?.qty ?? 0); editThreshold.value = toInt(it?.threshold ?? 0); editMemo.value = it?.memo || ''; modalWrap.hidden = false; $('#editTitle').textContent = it ? '품목 편집' : '새 품목 추가'; setTimeout(()=> editName.focus(), 0); }
-    function closeEdit(){ modalWrap.hidden = true; currentId = null; editFile.value=''; }
-    document.addEventListener('click', (e)=>{ if(e.target.id==='btnPickThumb') editFile.click(); });
-    editFile.onchange = async () => { const f = editFile.files?.[0]; if(!f) return; const url = await fileToDataURL(f); editThumb.src = url; };
-    $('#btnCancel').onclick = closeEdit; $('#btnCloseModal').onclick = closeEdit; modalWrap.addEventListener('click', (e)=>{ if(e.target === modalWrap) closeEdit(); }); window.addEventListener('keydown', (e)=>{ if(!modalWrap.hidden && e.key==='Escape') closeEdit(); });
-    $('#btnSave').onclick = ()=>{ const rec = { id: currentId ?? uid(), img: editThumb.src || '', name: editName.value.trim(), device: editDevice.value.trim(), qty: toInt(editQty.value), threshold: toInt(editThreshold.value), memo: editMemo.value.trim() }; upsert(rec); closeEdit(); };
-    $('#btnDelete').onclick = ()=>{ if(!currentId) return; if(!confirm('삭제하시겠어요?')) return; items = items.filter(x=>x.id!==currentId); pushHistory(); save(LS_KEY, items); sendBridge(); closeEdit(); render(); };
-    function fileToDataURL(file){ return new Promise((res, rej)=>{ const fr = new FileReader(); fr.onload = ()=>res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); }); }
-
-    // actions
-    document.addEventListener('click', (e)=>{
-      const act = e.target.closest('[data-act]')?.dataset.act; const tr = e.target.closest('tr');
-      if(!act) return;
-      if(act==='edit'){
-        const id = tr?.dataset.id || e.target.closest('.card')?.querySelector('img')?.dataset.id; const it = items.find(x=>x.id===id); openEdit(it);
-      }
-      if(act==='toReq'){
-        const id = tr?.dataset.id || e.target.closest('.card')?.querySelector('img')?.dataset.id; const it = items.find(x=>x.id===id); if(!it) return;
-        const ex = cart.list.find(x=>x.id===id); if(ex) ex.count += 1; else cart.list.push({id, name:it.name, device:it.device, count:1});
-        pushHistory(); save(REQ_KEY, cart); renderCart(); render();
-      }
-      if(act==='del'){
-        const id = tr?.dataset.id; if(!id) return; if(!confirm('삭제하시겠어요?')) return;
-        items = items.filter(x=>x.id!==id); pushHistory(); save(LS_KEY, items); sendBridge(); render();
-      }
-    });
-
-    // 이미지 셀/추가중 클릭
-    $('#tbody').addEventListener('click', (e)=>{
-      const img = e.target.closest('img'); if(img){ const id = img.dataset.id; const it = items.find(x=>x.id===id); openEdit(it); return; }
-      const td = e.target.closest('td');
-      if(td && td.matches('[data-key="threshold"]')){ const id = e.target.closest('tr')?.dataset.id; if(id) gotoRequestsAndHighlight(id); }
-    });
-
-    // 검색/필터/페이지
-    $('#q').addEventListener('input', e=>{ query = e.target.value; page=1; render(); });
-    $('#filterDevice').addEventListener('change', e=>{ deviceFilter = e.target.value; page=1; render(); });
-    $('#onlyLow').addEventListener('change', e=>{ onlyLow = e.target.checked; page=1; render(); });
-    $('#prev').onclick = ()=>{ if(page>1){ page--; render(); } };
-    $('#next').onclick = ()=>{ page++; render(); };
-    $('#pageSize').onchange = (e)=>{ pageSize = toInt(e.target.value); page=1; render(); };
-
-    // 전체선택/페이지선택
-    document.getElementById('thSelect')?.addEventListener('change', (e)=>{
-      const checked = e.target.checked;
-      document.querySelectorAll('#tbody .rowSel').forEach(cb=>{
-        cb.checked = checked;
-        const id = cb.closest('tr').dataset.id;
-        if(checked) selected.add(id); else selected.delete(id);
-      });
-    });
-    document.getElementById('selectAll')?.addEventListener('change', (e)=>{
-      const checked = e.target.checked;
-      document.querySelectorAll('#tbody .rowSel').forEach(cb=>{
-        cb.checked = checked;
-        const id = cb.closest('tr').dataset.id;
-        if(checked) selected.add(id); else selected.delete(id);
-      });
-    });
-
-    // 추가/내보내기/가져오기
-    $('#btnAdd').onclick = ()=>{ openEdit(null); };
-    $('#btnExport').onclick = ()=>{ const blob = new Blob([JSON.stringify(items,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'inventory.json'; a.click(); };
-    $('#btnUndo').onclick = undo; $('#btnRedo').onclick = redo;
-    window.addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && !e.shiftKey && e.key.toLowerCase()==='z'){ e.preventDefault(); undo(); } if((e.ctrlKey||e.metaKey) && e.shiftKey && e.key.toLowerCase()==='z'){ e.preventDefault(); redo(); }});
-
-    $('#btnImport').onclick = ()=> $('#fileImport').click();
-    $('#fileImport').onchange = async (e)=>{
-      const file = e.target.files?.[0]; if(!file) return;
-      if(file.type.startsWith('image/')){
-        const url = await fileToDataURL(file);
-        openEdit({ id: uid(), img:url, name:file.name.replace(/\.[^.]+$/, ''), device:'', qty:0, threshold:0, memo:'' });
-      } else {
-        const text = await file.text();
-        try{
-          if(file.name.toLowerCase().endsWith('.csv')){
-            const rows = text.split(/\r?\n/).filter(Boolean).map(r=>r.split(',').map(s=>s.trim()));
-            const head = rows.shift() || [];
-            const keyMap = {name:['name','물품명'], device:['device','사용기기'], qty:['qty','재고량'], memo:['memo','비고']};
-            const findIdx = (keys)=> head.findIndex(h=>keys.includes(h));
-            const idxs = Object.fromEntries(Object.entries(keyMap).map(([k, arr])=>[k, findIdx(arr)]));
-            for(const c of rows){
-              const name = idxs.name>=0 ? c[idxs.name] : '';
-              const device = idxs.device>=0 ? c[idxs.device] : '';
-              if(!name) continue;
-              const qty = idxs.qty>=0 ? toInt(c[idxs.qty]) : undefined;
-              const memo = idxs.memo>=0 ? c[idxs.memo] : undefined;
-              const found = items.find(x=>x.name===name && x.device===device);
-              if(found){ if(qty!==undefined) found.qty = qty; if(memo!==undefined) found.memo = memo; }
-              else { items.unshift({ id: uid(), img:'', name, device, qty: qty??0, threshold:0, memo: memo??'' }); }
-            }
-          } else {
-            const data = JSON.parse(text);
-            if(Array.isArray(data)){
-              items = data.map(x=>({ id: uid(), img:x.img||'', name:x.name||x.물품명||'', device:x.device||x.사용기기||'', qty:toInt(x.qty??x.재고량), threshold:0, memo:x.memo||x.비고||'' }));
-            }
-          }
-          pushHistory(); save(LS_KEY, items); sendBridge(); render();
-        }catch{ alert('파일 형식을 확인하세요. (JSON/CSV 지원)'); }
-      }
-      e.target.value='';
-    };
-
-    // 붙여넣기 모달
-    const openPaste = ()=>{ $('#pasteWrap').hidden = false; $('#pasteText').focus(); };
-    const closePaste = ()=>{ $('#pasteWrap').hidden = true; $('#pasteText').value=''; };
-    $('#btnPaste').onclick = openPaste; $('#btnClosePaste').onclick = closePaste; $('#btnPasteCancel').onclick = closePaste;
-    $('#btnPasteApply').onclick = ()=>{ const txt = $('#pasteText').value.trim(); if(!txt) return closePaste(); try{ applyTabular(txt); pushHistory(); save(LS_KEY, items); render(); }catch{ alert('표 형식을 확인하세요.'); } closePaste(); };
-
-    function applyTabular(text){
-      const rows = text.split(/\r?\n/).filter(Boolean).map(r=> r.split(/\t|,/));
-      const head = rows[0].map(h=>h.trim());
-      const looksHeader = ['name','물품명','device','사용기기','qty','재고량','memo','비고'].some(k=> head.includes(k));
-      const dataRows = looksHeader ? rows.slice(1) : rows;
-      const idx = (keys)=> head.findIndex(h=> keys.includes(h));
-      const idxName = looksHeader? idx(['name','물품명']) : 0;
-      const idxDevice = looksHeader? idx(['device','사용기기']) : 1;
-      const idxQty = looksHeader? idx(['qty','재고량']) : -1;
-      const idxMemo = looksHeader? idx(['memo','비고']) : -1;
-      for(const c of dataRows){
-        const name = (c[idxName]||'').trim();
-        const device = (c[idxDevice]||'').trim();
-        if(!name) continue;
-        const qty = idxQty>=0 ? toInt(c[idxQty]) : undefined;
-        const memo = idxMemo>=0 ? String(c[idxMemo]||'') : undefined;
-        const found = items.find(x=>x.name===name && x.device===device);
-        if(found){ if(qty!==undefined) found.qty = qty; if(memo!==undefined) found.memo = memo; }
-        else { items.unshift({ id: uid(), img:'', name, device, qty: qty??0, threshold: 0, memo: memo??'' }); }
-      }
-    }
-
-    // 선택 요청담기/삭제
-    document.getElementById('btnBulkToReq')?.addEventListener('click', ()=>{
-      if(selected.size===0) return alert('선택된 항목이 없습니다.');
-      for(const id of selected){
-        const it = items.find(x=>x.id===id); if(!it) continue;
-        const ex = cart.list.find(x=>x.id===id);
-        if(ex) ex.count += 1; else cart.list.push({id, name:it.name, device:it.device, count:1});
-      }
-      pushHistory(); save(REQ_KEY, cart); renderCart(); render();
-    });
-    document.getElementById('btnBulkDel')?.addEventListener('click', ()=>{
-      if(selected.size===0) return alert('선택된 항목이 없습니다.');
-      if(!confirm('선택 항목을 삭제할까요?')) return;
-      items = items.filter(x=>!selected.has(x.id)); pushHistory(); save(LS_KEY, items); sendBridge(); render();
-    });
-
-    // 데모 데이터
-    $('#seedDemo').onclick = ()=>{
-      const names = Array.from({length:120},(_,i)=>`데모 품목 ${String(i+1).padStart(3,'0')}`);
-      items = names.map((n,i)=>({ id: uid(), img:'', name:n, device: ['장치A','장치B','장치C'][i%3], qty: (i*3)%37, threshold: 5 + (i%4), memo:'' }));
-      pushHistory(); save(LS_KEY, items); sendBridge(); page=1; render();
-    };
-
-    // 요청 바구니
-    function renderCart(){
-      $('#cart').innerHTML = cart.list.map(it=>`
-        <div class="cart-row" data-item-id="${it.id}" style="display:flex; gap:8px; align-items:center; justify-content:space-between; padding:6px 0">
-          <div><strong>${it.name}</strong> <span class="hint">/ ${it.device||'-'}</span></div>
-          <div style="display:flex; gap:6px; align-items:center">
-            <button class="btn" data-ctrl="minus" data-id="${it.id}">-</button>
-            <input class="number" data-ctrl="count" data-id="${it.id}" value="${it.count}" style="width:64px; text-align:right" />
-            <button class="btn" data-ctrl="plus" data-id="${it.id}">+</button>
-            <button class="btn warn" data-ctrl="rm" data-id="${it.id}">제거</button>
+function loadLogs(type, page) {
+  const list = type === 'req' ? $('#reqList') : $('#outList');
+  if(type === 'req') curReqPage = page; else curOutPage = page;
+  list.innerHTML = '<div style="grid-column:1/-1; padding:40px; text-align:center; color:var(--muted);"><i class="ph ph-spinner-gap ph-spin" style="font-size:24px;"></i></div>';
+  
+  jsonp(`${APP_URL}?op=read_logs&type=${type}&page=${page}`, (res) => {
+    const logs = res.logs || [];
+    const total = res.total || 0;
+    const maxPage = Math.ceil(total / 10) || 1;
+    
+    if(type === 'req') $('#reqPageInfo').innerText = `${page} / ${maxPage}`;
+    else $('#outPageInfo').innerText = `${page} / ${maxPage}`;
+    
+    if(logs.length === 0) { list.innerHTML = '<div style="grid-column:1/-1; padding:40px; text-align:center; color:var(--muted);">기록이 없습니다.</div>'; return; }
+    
+    list.innerHTML = logs.map(l => {
+      const logId = l[l.length-1];
+      if(type === 'req') {
+        const isDone = l[6] === '구매완료';
+        let linkUrl = l[8];
+        if (linkUrl && !linkUrl.startsWith('http')) { linkUrl = 'https://' + linkUrl; }
+        const linkHtml = linkUrl ? `<a href="${linkUrl}" target="_blank" class="btn link"><i class="ph-bold ph-link"></i> 구매링크</a>` : '';
+        
+        return `
+        <div class="list-card">
+          <div class="card-body">
+            <div class="card-info">
+              <div class="card-title">${l[3]} <span style="color:var(--primary);">(${l[5]}개)</span></div>
+              <div class="card-meta"><i class="ph ph-user"></i> ${l[1]} · ${fmtDate(l[0])}</div>
+              <div class="card-meta" style="color:var(--danger)">${l[7]||''}</div>
+              <div style="margin-top:4px;">${linkHtml}</div>
+            </div>
           </div>
-        </div>
-      `).join('');
-      $('#reqNote').value = cart.note||'';
-    }
+          <div class="card-actions" style="justify-content:space-between;">
+            <span class="badge ${isDone?'done':'req'}" style="cursor:pointer" onclick="toggleReqStatus('${logId}','${l[6]}')">
+              <i class="ph-fill ${isDone?'ph-check-circle':'ph-clock'}"></i> ${l[6]}
+            </span>
+            <button class="btn-mini" onclick="deleteLog('req','${logId}')"><i class="ph ph-trash"></i></button>
+          </div>
+        </div>`;
+      } else {
+        return `
+        <div class="list-card">
+          <div class="card-body">
+            <div class="card-info">
+              <div class="card-title">${l[3]} <span style="color:var(--danger);">(-${l[5]})</span></div>
+              <div class="card-meta"><i class="ph ph-user"></i> ${l[1]} · ${fmtDate(l[0])}</div>
+            </div>
+          </div>
+          <div class="card-actions" style="justify-content:space-between;">
+             <div class="card-meta">잔고: ${l[6]}</div>
+             <button class="btn-mini" onclick="deleteLog('out','${logId}')"><i class="ph ph-trash"></i></button>
+          </div>
+        </div>`;
+      }
+    }).join('');
+  });
+}
 
-    document.addEventListener('click', (e)=>{
-      const id = e.target.dataset.id; const ctrl = e.target.dataset.ctrl; if(!ctrl) return;
-      const ex = cart.list.find(x=>x.id===id); if(!ex) return;
-      if(ctrl==='minus') ex.count = Math.max(1, ex.count-1);
-      if(ctrl==='plus') ex.count += 1;
-      if(ctrl==='rm') cart.list = cart.list.filter(x=>x.id!==id);
-      pushHistory(); save(REQ_KEY, cart); renderCart(); render();
-    });
+function sendData(fd, msg) {
+  fetch(APP_URL, {method:'POST', body:fd}).then(r=>r.json()).then(d=>{
+    if(d.result!=='success' && d.result!=='saved' && d.result!=='deleted') alert('서버 저장 실패: '+d.msg);
+  }).catch(e=>console.error(e));
+  if(msg) toast(msg);
+}
 
-    $('#reqNote').addEventListener('input', (e)=>{ cart.note = e.target.value; save(REQ_KEY, cart); });
-    $('#btnExportReq').onclick = ()=>{ const blob = new Blob([JSON.stringify(cart,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'request.json'; a.click(); };
-    $('#btnImportReq').onclick = ()=>{ const inp = document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange = async () => { const file = inp.files?.[0]; if(!file) return; const text = await file.text(); try{ cart = JSON.parse(text); save(REQ_KEY, cart); renderCart(); render(); }catch{ alert('JSON 형식을 확인하세요.'); } }; inp.click(); };
-    $('#btnCopyLink').onclick = ()=>{ const payload = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(cart))))); const url = location.origin + location.pathname + `#req=` + payload; navigator.clipboard.writeText(url).then(()=> alert('링크가 복사되었습니다.')); };
-    $('#btnClear').onclick = ()=>{ cart = {list:[], note:''}; pushHistory(); save(REQ_KEY, cart); renderCart(); render(); };
-    $('#btnSubmit').onclick = ()=>{ try{ for(const it of cart.list){ const inv = items.find(x=>x.id===it.id); if(inv){ inv.qty = Math.max(0, toInt(inv.qty) - toInt(it.count)); } } pushHistory(); save(LS_KEY, items); sendBridge(); render(); window.parent?.postMessage({type:'request:submit', payload: cart}, '*'); alert('제출 완료. \"추가중\" 수량이 재고에서 차감되었습니다.'); cart = {list:[], note:''}; save(REQ_KEY, cart); renderCart(); }catch{ alert('제출 중 오류. postMessage 권한을 확인하세요.'); } };
+function saveItem() {
+  const id = $('#editId').value || 'ITEM'+Math.random().toString(36).slice(2,8).toUpperCase();
+  const newItem = { id, name:$('#editName').value, spec:$('#editSpec').value, device:$('#editDevice').value, qty:Number($('#editQty').value), cost_vendor:$('#editCostV').value, cost_inet:$('#editCostI').value, img:$('#editImg').value, hasImg:!!$('#editImg').value, link:$('#editLink').value };
+  
+  const idx = inventory.findIndex(x => x.id === id);
+  if(idx>=0) inventory[idx] = newItem; else inventory.unshift(newItem);
+  if(newItem.img) imgCache[id] = newItem.img;
+  localStorage.setItem('local_inv', JSON.stringify(inventory));
+  
+  closeModal('itemModal'); renderPage(curPage);
+  const fd=new FormData(); fd.append('op','save_item'); for(let k in newItem) fd.append(k, newItem[k]);
+  sendData(fd, "저장되었습니다");
+}
 
-    function restoreFromHash(){
-      const m = location.hash.match(/#req=([^&]+)/); if(!m) return;
-      try{
-        const data = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));
-        if(data?.list) { cart = data; save(REQ_KEY, cart); }
-      }catch{}
-    }
+function deleteItem() {
+  if(!confirm('삭제하시겠습니까?')) return;
+  const id = $('#editId').value;
+  inventory = inventory.filter(x => x.id !== id);
+  localStorage.setItem('local_inv', JSON.stringify(inventory));
+  closeModal('itemModal'); renderPage(curPage);
+  const fd=new FormData(); fd.append('op','delete_item'); fd.append('id',id);
+  sendData(fd, "삭제되었습니다");
+}
 
-    function setTab(id){
-      $$('.tab').forEach(t=>t.setAttribute('aria-selected', String(t.dataset.target===id)));
-      $$('#app > section.panel').forEach(s=>s.classList.add('hidden'));
-      document.getElementById(id).classList.remove('hidden');
-    }
-    $$('.tab').forEach(t=> t.addEventListener('click', ()=> setTab(t.dataset.target)));
+function confirmCheckout() {
+  const id=$('#outModal').dataset.id, who=$('#outWho').value, qty=Number($('#outQty').value);
+  if(!who) return toast('이름을 입력해주세요');
+  const item = inventory.find(x => x.id === id);
+  item.qty -= qty;
+  localStorage.setItem('local_inv', JSON.stringify(inventory));
+  closeModal('outModal'); renderPage(curPage);
+  const fd=new FormData(); fd.append('op','checkout'); fd.append('id',id); fd.append('qty',qty); fd.append('who',who); fd.append('item',item.name); fd.append('spec',item.spec);
+  sendData(fd, "불출 처리 완료");
+}
 
-    function gotoRequestsAndHighlight(id){
-      setTab('view-requests');
-      const ex = cart.list.find(x=>x.id===id);
-      if(!ex){ const it = items.find(x=>x.id===id); if(it){ cart.list.push({id:it.id, name:it.name, device:it.device, count:1}); save(REQ_KEY, cart); renderCart(); render(); } }
-      requestAnimationFrame(()=>{ const el = document.querySelector(`.cart-row[data-item-id=\"${id}\"]`); if(el){ el.classList.add('hi'); el.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(()=> el.classList.remove('hi'), 1400); } });
-    }
+function confirmReq() {
+  const id=$('#reqModal').dataset.id, who=$('#reqWho').value, qty=Number($('#reqQty').value), note=$('#reqNote').value;
+  if(!who) return toast('이름을 입력해주세요');
+  closeModal('reqModal');
+  const item = inventory.find(x=>x.id===id);
+  const fd=new FormData(); fd.append('op','add_req'); fd.append('id',id); fd.append('who',who); fd.append('item',item.name); fd.append('spec',item.spec); fd.append('qty',qty); fd.append('note',note); fd.append('link', item.link || '');
+  sendData(fd, "구매 요청 전송됨");
+}
 
-    // init
-    restoreFromHash(); render(); renderCart(); pushHistory();
-    window.addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k') { e.preventDefault(); $('#q').focus(); } });
-  })();
-  </script>
+function deleteLog(type, logId) { if(!confirm("삭제하시겠습니까?")) return; const fd=new FormData(); fd.append('op','delete_log'); fd.append('type',type); fd.append('logId',logId); fetch(APP_URL, {method:'POST', body:fd}).then(()=>loadLogs(type, type==='req'?curReqPage:curOutPage)); }
+function toggleReqStatus(logId, st) { const nSt = st==='요청'?'구매완료':'요청'; if(!confirm(`'${nSt}' 상태로 변경할까요?`)) return; const fd=new FormData(); fd.append('op','update_req_status'); fd.append('logId',logId); fd.append('status',nSt); fetch(APP_URL, {method:'POST', body:fd}).then(()=>loadLogs('req', curReqPage)); }
+
+function goTab(t) { document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active')); document.querySelectorAll('.view-panel').forEach(e=>e.classList.remove('active')); event.target.classList.add('active'); $('#'+t).classList.add('active'); if(t!=='tab-inv') loadLogs(t==='tab-req'?'req':'out', 1); }
+function openItemModal(id) { const i=id?inventory.find(x=>x.id===id):null; $('#editId').value=id||''; $('#editName').value=i?i.name:''; $('#editSpec').value=i?i.spec:''; $('#editDevice').value=i?i.device:''; $('#editQty').value=i?i.qty:'0'; $('#editCostV').value=i?i.cost_vendor:''; $('#editCostI').value=i?i.cost_inet:''; $('#editImg').value=i&&imgCache[i.id]?imgCache[i.id]:''; $('#editLink').value=i?i.link||'':''; $('#btnDel').style.display=id?'block':'none'; $('#itemModal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openOut(id) { const i=inventory.find(x=>x.id===id); $('#outName').textContent=i.name; $('#outSpec').textContent=i.spec; $('#outModal').dataset.id=id; $('#outQty').value=1; $('#outWho').value=''; $('#outModal').classList.add('open'); }
+function openReq(id) { const i=inventory.find(x=>x.id===id); $('#reqName').textContent=i.name; $('#reqSpec').textContent=i.spec; $('#reqModal').dataset.id=id; $('#reqQty').value=1; $('#reqWho').value=''; $('#reqNote').value=''; $('#reqModal').classList.add('open'); }
+function adjVal(id, d) { const v=Number($('#'+id).value)+d; if(v>0)$('#'+id).value=v; }
+function movePage(d) { renderPage(curPage+d); }
+function moveLogPage(t, d) { loadLogs(t, (t==='req'?curReqPage:curOutPage)+d); }
+function processImg(input) { const f=input.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{ const i=new Image(); i.src=e.target.result; i.onload=()=>{ const c=document.createElement('canvas'); let w=i.width, h=i.height; if(w>300){h*=300/w; w=300;} c.width=w; c.height=h; c.getContext('2d').drawImage(i,0,0,w,h); $('#editImg').value=c.toDataURL('image/jpeg', 0.5); }}; r.readAsDataURL(f); }
+function jsonp(url, cb) { const n='cb'+Math.random().toString(36).slice(2); window[n]=d=>{cb(d);delete window[n];$('#'+n).remove()}; const s=document.createElement('script'); s.id=n; s.src=`${url}&cb=${n}`; document.body.appendChild(s); }
+
+init();
+</script>
 </body>
 </html>
