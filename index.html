@@ -10,12 +10,14 @@
   <link rel="icon" href="./assets/gongdan-mark.png" type="image/png" />
   <link rel="preload" as="image" href="./assets/gongdan-mark.png" />
   <style>
-    :root{--bg1:#e6f4ff;--bg2:#f4fbff;--ink:#0b2239;--muted:#365b7a;--card:#ffffff;--ring:rgba(0,119,255,.25);--shadow-sm:0 8px 24px rgba(15,45,80,.06);--shadow-md:0 14px 34px rgba(15,45,80,.12);--bd:rgba(0,0,0,.06)}
+    :root{--bg1:#e6f4ff;--bg2:#f4fbff;--ink:#0b2239;--muted:#365b7a;--card:#ffffff;--ring:rgba(0,119,255,.25);--shadow-sm:0 4px 12px rgba(15,45,80,.06);--shadow-md:0 12px 24px rgba(15,45,80,.1);--bd:rgba(0,0,0,.06)}
     @media (prefers-color-scheme: dark){
       :root{--bg1:#0d1b2a;--bg2:#0b1622;--ink:#e6eef6;--muted:#8aa7c4;--card:#101b2a;--ring:rgba(56,189,248,.35);--bd:rgba(255,255,255,.10);--shadow-sm:0 8px 24px rgba(0,0,0,.35);--shadow-md:0 14px 34px rgba(0,0,0,.5)}
     }
     *,*::before,*::after{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Pretendard,Arial}
+    html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Pretendard", system-ui, sans-serif;
+}
     body{
       background:
         radial-gradient(1200px 600px at 80% -10%, #bfe6ff 0%, transparent 60%),
@@ -105,7 +107,7 @@
         </li>
 
         <li>
-          <a class="card" href="./request.html" aria-label="소모품 관리">
+          <a class="card" href="./item.html" aria-label="소모품 관리">
             <div class="icon" aria-hidden="true">📝</div>
             <div class="card-content">
               <h3>소모품 관리</h3>
