@@ -101,6 +101,180 @@
             opacity: 0; pointer-events: none; transition: opacity 0.3s; white-space: nowrap;
         }
         .toast.show { opacity: 1; }
+        /* 7. Timeline Style for steps (기존 화살표 스타일) */
+        .timeline { list-style: none; padding: 0; margin: 10px 0 0 0; position: relative; }
+        .timeline-item {
+            position: relative; /* For the ::before line */
+            display: flex;
+            align-items: flex-start; /* Vertically align top of number and text */
+            gap: 12px; /* Space between number and text */
+        }
+        .timeline-item:not(:last-child) { padding-bottom: 20px; }
+        .timeline-item:not(:last-child)::before { content: ''; position: absolute; left: 12px; top: 26px; /* Adjust top position */ width: 2px; height: 100%; background-color: var(--accent); opacity: 0.3; }
+        .timeline-number {
+            flex-shrink: 0; /* Prevent circle from shrinking */
+            width: 26px; height: 26px; border-radius: 50%; background-color: var(--accent); color: var(--bg-color); display: grid; place-items: center; font-size: 14px; font-weight: bold;
+        }
+        .timeline-text {
+            padding-top: 3px; /* Fine-tune vertical alignment */
+        }
+            ul, li {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            ul, ol {
+                padding-left: 1.5rem;
+                margin-block-start: 0.5rem;
+                margin-block-end: 0.5rem;
+            }
+
+            .list-item {
+                padding: 8px 12px;
+                border-bottom: 1px solid #eee;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                transition: background-color 0.2s;
+            }
+        
+        /* 8. 새로 추가된 순서도(Flowchart) 스타일 */
+        /* 순서도 스타일 컨테이너 */
+        .flowchart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            width: 100%;
+        }
+
+        .flow-step {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text-main);
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin: 15px 0; /* 위아래 간격 */
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            min-width: 140px;
+            position: relative;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* 단계별 포인트 컬러 */
+        .flow-step.start { border-color: var(--accent); color: var(--accent); }
+        .flow-step.process { border-color: rgba(255,255,255,0.3); }
+        
+        /* 마름모 (분기점) 스타일: 높이가 낮은 마름모 (clip-path 사용) */
+        .flow-step.decision {
+            border: none; /* 기존 border 제거 */
+            background-color: var(--card-bg);
+            color: #f59e0b;
+            width: 180px;
+            min-height: 80px;
+            position: relative; /* z-index 적용을 위해 필요 */
+            z-index: 10; /* 우선순위를 높여 다른 요소 위에 렌더링되도록 함 */
+            
+            /* 마름모 생성: 사각형의 네 꼭짓점을 중앙으로 이동 */
+            -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            
+            /* 테두리 (3px 주황색) 및 그림자 다시 반영 */
+            box-shadow: 0 0 0 3px #f59e0b, 0 4px 6px rgba(0,0,0,0.3); 
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            margin-top: 25px; 
+            margin-bottom: 25px; 
+        }
+
+        /* 텍스트 스타일은 동일 */
+        .flow-step.decision > span {
+            display: block;
+            padding: 10px;
+            text-align: center;
+            line-height: 1.4;
+            max-width: 90%;
+            font-weight: 600;
+        }
+
+        /* 분기점 아래 기본 화살표 제거 */
+        .flow-step.decision::after {
+            display: none;
+        }
+        .flow-step.end {
+            border-color: #ef4444; /* Red color */
+            color: #ef4444;
+            border-radius: 20px;
+        }
+
+        /* 화살표 그리기 (::after) */
+        .flow-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -27px; /* 화살표 위치 조정 (margin과 연동) */
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 12px solid var(--text-sub); /* 화살표 색상 */
+            z-index: 1;
+        }
+        
+        /* 병렬 구간 컨테이너 */
+        .flow-parallel-branches {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            width: 100%;
+            position: relative;
+            padding-top: 10px; 
+            margin-top: 10px; /* 마름모와 병렬선 사이 간격 확보 (축소) */
+        }
+
+        /* 병렬 분기 연결선 (상단 가로선) - 선택사항 */
+        .flow-parallel-branches::before {
+            content: '';
+            position: absolute;
+            top: -30px; /* 마름모의 아래쪽 끝에 연결되도록 높이 조정 */
+            left: 50%;
+            transform: translateX(-50%);
+            height: 20px;
+            width: 2px;
+            background-color: var(--text-sub);
+            opacity: 0.8;
+            z-index: 1; 
+        }
+        /* 연결선 중앙에서 내려오는 선 */
+        .flow-parallel-branches::after {
+            content: '';
+            position: absolute;
+            top: -10px; 
+            left: 20%; 
+            right: 20%;
+            height: 2px;
+            background-color: var(--text-sub);
+            opacity: 0.8;
+        }
+
+        .flow-branch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+        
+        /* 병렬 구간 내부의 마지막 요소 화살표 제거 */
+        .flow-branch .flow-step:last-child::after {
+            display: none;
+        }
+
     </style>
 </head>
 <body>
@@ -131,9 +305,14 @@
         const noResult = document.getElementById('noResult');
         const docCount = document.getElementById('docCount');
 
-        // 1. 데이터 로드
+        // 1. 데이터 로드 (data.json에서 불러옴)
         fetch('data.json')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP error ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
                 docData = data;
                 renderTree(); 
@@ -141,20 +320,14 @@
                 toast('데이터 로드 완료 ✅');
             })
             .catch(error => {
-                console.error('Error:', error);
-                listContainer.innerHTML = '<div style="text-align:center; color: tomato;">데이터 로드 실패<br>(Live Server 확인)</div>';
+                console.error('데이터 로딩 중 오류 발생:', error);
+                listContainer.innerHTML = '<div style="text-align:center; color: tomato; padding: 40px;">데이터 로드 실패: data.json 파일을 확인하세요.</div>';
             });
 
         // 2. 검색 이벤트
         document.getElementById('searchInput').addEventListener('input', function() {
             const keyword = this.value.trim();
             renderTree(keyword);
-            
-            // 검색 결과 개수 토스트 띄우기 (빈값이 아닐때만)
-            if(keyword) {
-                const matchCount = document.querySelectorAll('details').length;
-                // 너무 자주 뜨지 않게 디바운스 처리를 하면 좋지만, 여기선 간단히 구현
-            }
         });
 
         // 3. 재귀적 트리 생성 함수 (이전 로직 유지 + 디자인 적용)
@@ -163,7 +336,7 @@
             let hasMatchInLevel = false;
 
             items.forEach(item => {
-                const lowerKeyword = keyword.toLowerCase();
+                const lowerKeyword = keyword ? keyword.toLowerCase() : '';
                 const isTitleMatch = item.title.toLowerCase().includes(lowerKeyword);
                 const isContentMatch = item.content && item.content.toLowerCase().includes(lowerKeyword);
                 
@@ -176,14 +349,37 @@
                     hasMatchInLevel = true;
                     
                     let displayTitle = keyword ? highlightText(item.title, keyword) : item.title;
-                    // 검색어가 있거나, 전체 펼침 상태이면 open 처리
                     const isOpen = (keyword !== '' && (childrenResult.hasMatch || isTitleMatch || isContentMatch)) || isAllExpanded ? 'open' : '';
 
                     html += `<details ${isOpen}>`;
                     html += `<summary>${displayTitle}</summary>`;
                     
                     if (item.content) {
-                        let displayContent = keyword ? highlightText(item.content, keyword) : item.content;
+                        let displayContent;
+                        // [변경] 클래스명 수정: flow-chart-container -> flowchart-container
+                        if (item.content.includes('<div class="flowchart-container">')) {
+                            displayContent = item.content;
+                            if (keyword) {
+                                // [변경] 클래스명 수정
+                                displayContent = highlightTextInFlowContainer(displayContent, keyword, '.flowchart-container');
+                            }
+                        }
+                        // 화살표(→)가 포함된 콘텐츠를 타임라인 스타일로 변환 (flow-container가 없는 경우만)
+                        else if (item.content.includes('→')) {
+                            const steps = item.content.split('→').map(step => step.trim()).filter(step => step);
+                            let listHtml = '<ol class="timeline">';
+                            steps.forEach((step, index) => {
+                                const highlightedStep = keyword ? highlightText(step, keyword) : step;
+                                listHtml += `<li class="timeline-item">
+                                                <span class="timeline-number">${index + 1}</span>
+                                                <span class="timeline-text">${highlightedStep}</span>
+                                             </li>`;
+                            });
+                            listHtml += '</ol>';
+                            displayContent = listHtml;
+                        } else {
+                            displayContent = keyword ? highlightText(item.content, keyword) : item.content;
+                        }
                         html += `<div class="content-box">${displayContent}</div>`;
                     }
                     
@@ -206,6 +402,36 @@
             const regex = new RegExp(`(${keyword})`, 'gi');
             return text.replace(regex, '<span class="highlight">$1</span>');
         }
+
+        // 특정 컨테이너 내부의 텍스트와 외부의 텍스트를 구분하여 하이라이트 처리하는 함수
+        function highlightTextInFlowContainer(htmlContent, keyword, containerClass) {
+            // 컨테이너 닫는 태그를 기준으로 분리
+            const closingTag = '</div>';
+            const containerIndex = htmlContent.indexOf(containerClass);
+            const closeIndex = htmlContent.indexOf(closingTag, containerIndex) + closingTag.length;
+
+            if (containerIndex === -1 || closeIndex === closingTag.length - 1) {
+                return highlightText(htmlContent, keyword); // 컨테이너가 없으면 일반 처리
+            }
+
+            const flowContainerPart = htmlContent.substring(0, closeIndex);
+            const restOfContent = htmlContent.substring(closeIndex); 
+
+            // 1. flow-chart-container 내부 텍스트에 하이라이트 적용
+            let tempDiv = document.createElement('div');
+            tempDiv.innerHTML = flowContainerPart;
+            tempDiv.querySelectorAll('.flow-step').forEach(element => {
+                // flow-step 내부의 텍스트만 하이라이트
+                element.innerHTML = highlightText(element.innerHTML, keyword);
+            });
+            let highlightedHtml = tempDiv.innerHTML;
+
+            // 2. 나머지 텍스트에 하이라이트 적용
+            highlightedHtml += highlightText(restOfContent, keyword);
+
+            return highlightedHtml;
+        }
+
 
         function countItems(items) {
             let count = 0;
