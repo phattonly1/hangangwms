@@ -136,7 +136,11 @@
     /* 테이블 스타일 */
     .content-box table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px; border-style: hidden; }
     .content-box th, .content-box td { border: 1px solid var(--bd); padding: 10px 12px; text-align: left; }
-    .content-box th { background-color: var(--card-bg); color: var(--accent); font-weight: 700; }
+    .content-box th { 
+    background-color: rgba(14, 165, 233, 0.1); /* 연한 파란색 배경 */
+    color: var(--text-main); 
+    font-weight: 700; 
+}
     
     .doc-segment { margin-bottom: 8px; padding: 4px; border-radius: 4px; transition: background 1s; }
     .doc-segment.flash-target { background-color: var(--highlight); }
@@ -307,41 +311,92 @@
                 html += `<summary>${item.title}</summary>`;
                 if (item.content) {
                     html += `<div class="content-box">`;
-                    const parts = splitContent(item.content);
-                    parts.forEach((part, pIdx) => {
-                        const segmentId = `seg-${item.uid}-${pIdx}`;
-                        const cleanPart = part.trim();
+                    // [수정된 로직] 제목, 화살표, 마크다운 표를 모두 처리하는 통합 코드
+const parts = splitContent(item.content);
+parts.forEach((part, pIdx) => {
+    const segmentId = `seg-${item.uid}-${pIdx}`;
+    let cleanPart = part.trim();
 
-                        // 1. 제목인 경우 (<b>로 시작하고 화살표가 없는 경우)
-                        if (cleanPart.startsWith('<b>') && !cleanPart.includes('→')) {
-                            // <b>태그를 제거하고 내용만 추출해서 스타일 적용
-                            const titleText = cleanPart.replace(/<\/?b>/g, ''); 
-                            html += `<div id="${segmentId}" class="flow-title">${titleText}</div>`;
-                        } 
-                        // 2. 플로우 차트인 경우 ('→' 포함)
-                        else if (cleanPart.includes('→')) {
-                            const steps = cleanPart.split('→').map(s => s.trim());
-                            let flowHtml = `<div class="flow-wrap">`;
-                            
-                            steps.forEach((step, i) => {
-                                flowHtml += `
-                                    <div class="flow-step">
-                                        <span class="flow-num">${i + 1}</span>
-                                        <span>${step}</span>
-                                    </div>`;
-                                if (i < steps.length - 1) {
-                                    flowHtml += `<div class="flow-arrow">▶</div>`; 
+    // 1. 제목인 경우 (<b>로 시작하고 화살표/표가 아닌 경우)
+    if (cleanPart.startsWith('<b>') && !cleanPart.includes('→') && !cleanPart.startsWith('|')) {
+        const titleText = cleanPart.replace(/<\/?b>/g, ''); 
+        html += `<div id="${segmentId}" class="flow-title">${titleText}</div>`;
+    } 
+    // 2. 플로우 차트인 경우 ('→' 포함)
+    else if (cleanPart.includes('→')) {
+        const steps = cleanPart.split('→').map(s => s.trim());
+        let flowHtml = `<div class="flow-wrap">`;
+        steps.forEach((step, i) => {
+            flowHtml += `
+                <div class="flow-step">
+                    <span class="flow-num">${i + 1}</span>
+                    <span>${step}</span>
+                </div>`;
+            if (i < steps.length - 1) {
+                flowHtml += `<div class="flow-arrow">▶</div>`; 
+            }
+        });
+        flowHtml += `</div>`;
+        html += `<div id="${segmentId}" class="doc-segment" style="padding:0;">${flowHtml}</div>`;
+    }
+    // [기존 코드 위치] 3. 마크다운 표인 경우 ('|'로 시작)
+                    else if (cleanPart.startsWith('|')) {
+                        const lines = cleanPart.split('\n').filter(r => r.trim().length > 0);
+                        // 데이터 파싱 (구분선 제외, 양끝 공백 제거)
+                        const rows = lines.filter(l => !l.includes('---'))
+                                          .map(l => l.split('|').filter(c => c.trim() !== '').map(c => c.trim()));
+
+                        if (rows.length === 0) return;
+
+                        // 헤더와 바디 분리
+                        const header = rows[0];
+                        const body = rows.slice(1);
+
+                        // [자동 병합 로직]
+                        // meta 배열에 { rowspan: 1, hidden: false } 상태 저장
+                        const meta = body.map(row => row.map(() => ({ rowspan: 1, hidden: false })));
+
+                        // 세로(열) 방향으로 순회하며 위아래 텍스트가 같으면 병합
+                        for (let c = 0; c < header.length; c++) {
+                            for (let r = 1; r < body.length; r++) {
+                                if (body[r][c] === body[r-1][c] && body[r][c] !== '') {
+                                    // 바로 위가 아니라 병합의 '시작점(Root)'을 찾아 rowspan 증가
+                                    let root = r - 1;
+                                    while (root >= 0 && meta[root][c].hidden) { root--; }
+                                    
+                                    if (root >= 0) {
+                                        meta[root][c].rowspan += 1; // 시작점의 rowspan 증가
+                                        meta[r][c].hidden = true;   // 현재 셀은 숨김 처리
+                                    }
+                                }
+                            }
+                        }
+
+                        // HTML 생성
+                        let tableHtml = '<table><thead><tr>';
+                        tableHtml += header.map(h => `<th>${h}</th>`).join('');
+                        tableHtml += '</tr></thead><tbody>';
+
+                        body.forEach((row, rIdx) => {
+                            tableHtml += '<tr>';
+                            row.forEach((cell, cIdx) => {
+                                const m = meta[rIdx][cIdx];
+                                if (!m.hidden) {
+                                    const spanAttr = m.rowspan > 1 ? ` rowspan="${m.rowspan}"` : '';
+                                    tableHtml += `<td${spanAttr}>${cell}</td>`;
                                 }
                             });
-                            
-                            flowHtml += `</div>`;
-                            html += `<div id="${segmentId}" class="doc-segment" style="padding:0;">${flowHtml}</div>`;
-                        } 
-                        // 3. 그 외 일반 텍스트
-                        else {
-                            html += `<div id="${segmentId}" class="doc-segment">${part}</div>`;
-                        }
-                    });
+                            tableHtml += '</tr>';
+                        });
+                        tableHtml += '</tbody></table>';
+
+                        html += `<div id="${segmentId}" class="doc-segment">${tableHtml}</div>`;
+                    }
+    // 4. 그 외 일반 텍스트
+    else {
+        html += `<div id="${segmentId}" class="doc-segment">${part}</div>`;
+    }
+});
                     html += `</div>`;
                 }
                 if (item.children) html += `<div class="sub-list">${buildTreeHTML(item.children)}</div>`;

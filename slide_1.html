@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>매뉴얼 뷰어</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* [기본 테마] */
+    :root {
+      --bg-color: #0f172a; --card-bg: #1e293b;
+      --text-main: #f1f5f9; --text-sub: #94a3b8;
+      --primary: #38bdf8; --btn-hover: rgba(56, 189, 248, 0.2);
+    }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; }
+
+    .viewer-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+    
+    /* 슬라이드 영역 */
+    .slide {
+      position: absolute; inset: 0; opacity: 0; visibility: hidden;
+      transition: opacity 0.4s ease, visibility 0.4s;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      padding: 60px 80px; box-sizing: border-box;
+    }
+    .slide.active { opacity: 1; visibility: visible; z-index: 1; }
+
+    /* 이미지 박스 */
+    .img-box {
+      flex: 1; width: 100%; display: flex; justify-content: center; align-items: center;
+      margin-bottom: 20px; overflow: hidden; position: relative;
+    }
+    .img-box img {
+      max-width: 100%; max-height: 100%; object-fit: contain;
+      border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      cursor: zoom-in;
+      transition: transform 0.2s;
+    }
+    .img-box img:hover { transform: scale(1.02); }
+
+    /* 이미지 에러 박스 */
+    .img-error {
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--text-sub); border: 2px dashed var(--text-sub); border-radius: 12px;
+      width: 80%; height: 60%; background: rgba(0,0,0,0.2);
+    }
+
+    /* 텍스트 박스 */
+    .text-box {
+      text-align: center; z-index: 2;
+      background: rgba(15, 23, 42, 0.85); padding: 15px 30px; border-radius: 30px;
+      backdrop-filter: blur(4px); max-width: 80%; border: 1px solid rgba(255,255,255,0.1);
+    }
+    .text-box h2 { margin: 0 0 8px 0; font-size: 1.5rem; color: var(--primary); }
+    .text-box p { margin: 0; color: var(--text-sub); font-size: 1rem; line-height: 1.5; }
+
+    .text-only .text-box { background: transparent; transform: scale(1.2); border: none; }
+
+    /* 네비게이션 버튼 (이전/다음) */
+    .nav-btn {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 60px; height: 60px; border: none; background: transparent;
+      color: var(--text-sub); font-size: 2rem; cursor: pointer; z-index: 10;
+      display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: 0.2s;
+    }
+    .nav-btn:hover { background: var(--btn-hover); color: var(--primary); }
+    .nav-btn.prev { left: 20px; }
+    .nav-btn.next { right: 20px; }
+    .nav-btn:disabled { opacity: 0.2; cursor: default; }
+
+    /* 진행바 & 페이지번호 */
+    .progress-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: rgba(255,255,255,0.1); z-index: 10; }
+    .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+    .page-num { position: absolute; top: 20px; right: 30px; font-weight: 700; color: var(--text-sub); z-index: 10; }
+
+    /* --- [추가된 목차(사이드바) 스타일] --- */
+    .menu-btn {
+      position: absolute; top: 20px; left: 20px; z-index: 100;
+      background: transparent; border: none; color: var(--text-sub);
+      font-size: 1.8rem; cursor: pointer; padding: 5px; border-radius: 8px;
+    }
+    .menu-btn:hover { color: var(--primary); background: rgba(255,255,255,0.1); }
+
+    .toc-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 900;
+      display: none; backdrop-filter: blur(2px);
+    }
+    .toc-overlay.open { display: block; }
+
+    .toc-panel {
+      position: fixed; top: 0; left: 0; bottom: 0; width: 280px;
+      background: rgba(15, 23, 42, 0.95); border-right: 1px solid rgba(255,255,255,0.1);
+      z-index: 950; transform: translateX(-100%); transition: transform 0.3s ease;
+      display: flex; flex-direction: column;
+    }
+    .toc-panel.open { transform: translateX(0); }
+
+    .toc-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 1.2rem; color: var(--primary); }
+    .toc-list { flex: 1; overflow-y: auto; padding: 10px 0; list-style: none; margin: 0; }
+    .toc-item {
+      padding: 12px 20px; cursor: pointer; font-size: 0.95rem; color: var(--text-sub);
+      border-left: 3px solid transparent; transition: 0.2s;
+    }
+    .toc-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+    .toc-item.active { background: rgba(56, 189, 248, 0.1); color: var(--primary); border-left-color: var(--primary); font-weight: 600; }
+
+
+    /* --- [라이트박스 스타일] --- */
+    #lightbox {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(5px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    #lightbox.show { opacity: 1; pointer-events: auto; }
+    
+    #lightboxImg {
+      max-width: 90vw; max-height: 90vh;
+      object-fit: contain; transform-origin: center;
+      transition: transform 0.1s ease-out;
+    }
+
+    .lightbox-controls {
+      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 15px; background: rgba(255,255,255,0.1);
+      padding: 10px 20px; border-radius: 30px; backdrop-filter: blur(4px);
+    }
+    .zoom-btn {
+      background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;
+      width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; transition: 0.2s;
+    }
+    .zoom-btn:hover { background: rgba(255,255,255,0.2); }
+
+    .close-btn {
+      position: absolute; top: 20px; right: 20px;
+      background: none; border: none; color: white; font-size: 2.5rem; cursor: pointer; z-index: 1001;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="viewer-container">
+    <button class="menu-btn" onclick="toggleTOC()">☰</button>
+
+    <div id="loader" style="position:absolute; color:#38bdf8; font-weight:bold;">LOADING...</div>
+    <div class="page-num" id="pageNum"></div>
+    <div id="slide-wrapper" style="width:100%; height:100%;"></div>
+    
+    <button class="nav-btn prev" id="prevBtn" onclick="move(-1)">&#10094;</button>
+    <button class="nav-btn next" id="nextBtn" onclick="move(1)">&#10095;</button>
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+  </div>
+
+  <div class="toc-overlay" onclick="toggleTOC()"></div>
+  <aside class="toc-panel" id="tocPanel">
+    <div class="toc-header">📖 목차</div>
+    <ul class="toc-list" id="tocList"></ul>
+  </aside>
+
+  <div id="lightbox">
+    <button class="close-btn" onclick="closeLightbox()">&times;</button>
+    <img id="lightboxImg" src="" draggable="false">
+    <div class="lightbox-controls">
+      <button class="zoom-btn" onclick="zoom(-0.5)">&#8722;</button>
+      <button class="zoom-btn" onclick="zoom(0)">&#8634;</button>
+      <button class="zoom-btn" onclick="zoom(0.5)">&#43;</button>
+    </div>
+  </div>
+
+  <script>
+    let slidesData = [];
+    let curIdx = 0;
+
+    fetch('slide_1.json')
+      .then(r => r.json())
+      .then(data => {
+        slidesData = data;
+        renderSlides();
+        renderTOC(); // 목차 생성
+        document.getElementById('loader').style.display = 'none';
+      })
+      .catch(e => {
+        document.getElementById('loader').innerHTML = 'JSON 로드 실패';
+      });
+
+    /* --- [슬라이드 렌더링] --- */
+    function renderSlides() {
+      const wrapper = document.getElementById('slide-wrapper');
+      let html = '';
+
+      slidesData.forEach((item, idx) => {
+        let content = '';
+        if (item.type === 'image') {
+          content = `
+            <div class="img-box">
+              <img src="${item.src}" alt="${item.title || ''}" 
+                   onclick="openLightbox('${item.src}')"
+                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+              <div class="img-error">
+                <span style="font-size:2rem">⚠️</span>
+                <p>이미지 없음<br><span style="font-size:0.8rem; opacity:0.7">${item.src}</span></p>
+              </div>
+            </div>
+            ${(item.title || item.desc) ? `
+              <div class="text-box">
+                ${item.title ? `<h2>${item.title}</h2>` : ''}
+                ${item.desc ? `<p>${item.desc}</p>` : ''}
+              </div>` : ''}
+          `;
+        } else {
+          content = `
+            <div class="text-box">
+              <h1 style="color:var(--primary); margin-bottom:1rem;">${item.title || ''}</h1>
+              <p style="font-size:1.2rem;">${item.desc || item.subtitle || ''}</p>
+              ${item.author ? `<p style="margin-top:30px; opacity:0.6">${item.author}</p>` : ''}
+              ${item.type === 'end' ? '<button onclick="location.reload()" style="margin-top:20px; padding:10px 20px; background:var(--primary); border:none; border-radius:6px; cursor:pointer; font-weight:bold;">처음으로</button>' : ''}
+            </div>
+          `;
+        }
+        html += `<div class="slide ${item.type !== 'image' ? 'text-only' : ''} ${idx === 0 ? 'active' : ''}">${content}</div>`;
+      });
+      wrapper.innerHTML = html;
+      updateUI();
+    }
+
+    /* --- [이동 및 UI 업데이트] --- */
+    function move(dir) {
+      const slides = document.querySelectorAll('.slide');
+      if (curIdx + dir < 0 || curIdx + dir >= slides.length) return;
+      slides[curIdx].classList.remove('active');
+      curIdx += dir;
+      slides[curIdx].classList.add('active');
+      updateUI();
+    }
+
+    function goToSlide(index) {
+      const slides = document.querySelectorAll('.slide');
+      slides[curIdx].classList.remove('active');
+      curIdx = index;
+      slides[curIdx].classList.add('active');
+      updateUI();
+      toggleTOC(); // 이동 후 목차 닫기
+    }
+
+    function updateUI() {
+      const total = slidesData.length;
+      document.getElementById('pageNum').innerText = `${curIdx + 1} / ${total}`;
+      document.getElementById('progress').style.width = `${((curIdx + 1) / total) * 100}%`;
+      document.getElementById('prevBtn').disabled = curIdx === 0;
+      document.getElementById('nextBtn').disabled = curIdx === total - 1;
+
+      // 목차 하이라이트 업데이트
+      document.querySelectorAll('.toc-item').forEach((el, idx) => {
+        el.classList.toggle('active', idx === curIdx);
+      });
+    }
+
+    /* --- [목차 기능] --- */
+    function renderTOC() {
+      const list = document.getElementById('tocList');
+      list.innerHTML = slidesData.map((item, idx) => {
+        // 제목이 없으면 'Slide 번호'로 대체
+        let title = item.title || `Slide ${idx + 1}`;
+        // 긴 제목은 말줄임표 처리 (CSS로 처리 가능하지만 간단하게)
+        if(title.length > 20) title = title.substring(0, 20) + '...';
+        return `<li class="toc-item ${idx === 0 ? 'active' : ''}" onclick="goToSlide(${idx})">${title}</li>`;
+      }).join('');
+    }
+
+    function toggleTOC() {
+      const panel = document.getElementById('tocPanel');
+      const overlay = document.querySelector('.toc-overlay');
+      const isOpen = panel.classList.contains('open');
+      
+      if (isOpen) {
+        panel.classList.remove('open');
+        overlay.classList.remove('open');
+      } else {
+        panel.classList.add('open');
+        overlay.classList.add('open');
+      }
+    }
+
+    /* --- [확대 기능] --- */
+    let currentZoom = 1;
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+
+    window.openLightbox = function(src) {
+      lightboxImg.src = src;
+      currentZoom = 1;
+      updateZoom();
+      lightbox.classList.add('show');
+    };
+
+    window.closeLightbox = function() {
+      lightbox.classList.remove('show');
+      setTimeout(() => { lightboxImg.src = ''; }, 300);
+    };
+
+    window.zoom = function(step) {
+      if (step === 0) currentZoom = 1;
+      else currentZoom += step;
+      if (currentZoom < 0.5) currentZoom = 0.5;
+      if (currentZoom > 5) currentZoom = 5;
+      updateZoom();
+    };
+
+    function updateZoom() {
+      lightboxImg.style.transform = `scale(${currentZoom})`;
+    }
+
+    lightbox.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      if (e.deltaY < 0) zoom(0.1);
+      else zoom(-0.1);
+    });
+
+    lightbox.addEventListener('click', function(e) {
+      if (e.target === lightbox) closeLightbox();
+    });
+
+    document.addEventListener('keydown', e => {
+      // 라이트박스가 열려있으면 ESC로 닫기
+      if (lightbox.classList.contains('show')) {
+        if(e.key === 'Escape') closeLightbox();
+        return;
+      }
+      // 목차가 열려있으면 ESC로 닫기
+      if (document.getElementById('tocPanel').classList.contains('open')) {
+        if(e.key === 'Escape') toggleTOC();
+        return;
+      }
+
+      // 기본 이동
+      if(e.key === 'ArrowRight' || e.key === 'Space') move(1);
+      if(e.key === 'ArrowLeft') move(-1);
+    });
+  </script>
+</body>
+</html>
