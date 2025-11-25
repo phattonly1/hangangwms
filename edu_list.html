@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>직무 교육 자료실</title>
+  <meta name="theme-color" content="#e6f4ff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b2239" media="(prefers-color-scheme: dark)">
+  <style>
+    /* [index.html과 동일한 디자인 테마] */
+    :root{--bg1:#e6f4ff;--bg2:#f4fbff;--ink:#0b2239;--muted:#365b7a;--card:#ffffff;--ring:rgba(0,119,255,.25);--shadow-sm:0 4px 12px rgba(15,45,80,.06);--shadow-md:0 12px 24px rgba(15,45,80,.1);--bd:rgba(0,0,0,.06); --primary:#0a66d3;}
+    @media (prefers-color-scheme: dark){
+      :root{--bg1:#0d1b2a;--bg2:#0b1622;--ink:#e6eef6;--muted:#8aa7c4;--card:#101b2a;--ring:rgba(56,189,248,.35);--bd:rgba(255,255,255,.10);--shadow-sm:0 8px 24px rgba(0,0,0,.35);--shadow-md:0 14px 34px rgba(0,0,0,.5); --primary:#7cc0ff;}
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html, body { font-family: -apple-system, BlinkMacSystemFont, "Pretendard", system-ui, sans-serif; }
+    body{
+      background: linear-gradient(180deg,var(--bg2),var(--bg1));
+      color:var(--ink); display:grid; place-items:center; padding:24px; min-height:100svh; margin: 0;
+    }
+    .wrap{width:min(900px,100%)} /* 목록 페이지라 폭을 약간 좁힘 */
+    
+    /* 헤더 영역 */
+    .header { margin-bottom: 30px; }
+    .back-link { 
+        display: inline-flex; align-items: center; gap: 6px;
+        text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
+        margin-bottom: 12px; transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--primary); }
+    .header h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+    .header p { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
+
+    /* 리스트 그리드 */
+    .list-grid { display: flex; flex-direction: column; gap: 16px; }
+
+    /* 카드 스타일 (index.html 기반 + 상세정보 추가) */
+    .edu-card {
+      background: var(--card); border: 1px solid var(--bd); border-radius: 16px;
+      padding: 24px; text-decoration: none; color: inherit;
+      box-shadow: var(--shadow-sm); transition: all 0.2s ease;
+      display: flex; align-items: flex-start; gap: 20px;
+    }
+    .edu-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--ring); }
+    
+    /* 썸네일/아이콘 영역 */
+    .edu-icon {
+        width: 60px; height: 60px; background: rgba(14, 165, 233, 0.1); color: var(--primary);
+        border-radius: 12px; display: grid; place-items: center; font-size: 28px; flex-shrink: 0;
+    }
+
+    /* 텍스트 영역 */
+    .edu-content { flex: 1; }
+    .edu-tag { 
+        display: inline-block; padding: 4px 8px; border-radius: 6px; 
+        background: rgba(0,0,0,0.05); color: var(--muted); 
+        font-size: 12px; font-weight: 600; margin-bottom: 8px;
+    }
+    .edu-content h3 { margin: 0 0 6px; font-size: 19px; font-weight: 700; line-height: 1.3; }
+    .edu-content p { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.5; }
+    .edu-meta { margin-top: 12px; font-size: 13px; color: var(--muted); opacity: 0.8; display: flex; gap: 12px; }
+
+    /* 모바일 대응 */
+    @media (max-width: 600px) {
+        .edu-card { padding: 20px; }
+        .edu-icon { width: 48px; height: 48px; font-size: 24px; }
+        .edu-content h3 { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <header class="header">
+        <a href="index.html" class="back-link">
+            <span>←</span> 메인 대시보드
+        </a>
+        <h1>직무 교육 자료실</h1>
+        <p>수질자동측정망 운영 및 시스템 활용 교육 자료 모음</p>
+    </header>
+
+    <div class="list-grid">
+        
+        <a href="slide_1.html" class="edu-card">
+            <div class="edu-icon">📊</div>
+            <div class="edu-content">
+                <span class="edu-tag">시스템 운영</span>
+                <h3>소규모감시망 자료선별 및 시스템 조작</h3>
+                <p>자동/수동 선별 기준, 차트 분석 방법 및 비정상 코드 분류에 대한 상세 가이드</p>
+                <div class="edu-meta">
+                    <span>👤 차영종</span>
+                    <span>📅 2025.11</span>
+                </div>
+            </div>
+        </a>
+
+        <div class="edu-card" style="opacity: 0.6; cursor: default;">
+            <div class="edu-icon" style="background: rgba(0,0,0,0.05); color: #999;">🚧</div>
+            <div class="edu-content">
+                <span class="edu-tag">안전 교육</span>
+                <h3 style="color: #999;">측정소 안전관리 수칙 (준비중)</h3>
+                <p>밀폐공간 작업 및 전기 안전 관련 교육 자료</p>
+                <div class="edu-meta">
+                    <span>📅 업데이트 예정</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

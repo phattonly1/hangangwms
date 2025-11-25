@@ -131,6 +131,7 @@
     details[open] > summary::after { transform: rotate(180deg); color: var(--accent); }
     
     .content-box { padding: 20px; background: var(--bg); border-top: 1px solid var(--bd); font-size: 15px; line-height: 1.6; color: var(--text-sub); }
+    .content-box:empty { display: none; } /* 빈 내용 숨김 처리 */
     .sub-list { border-top: 1px solid var(--bd); background: rgba(0,0,0,0.02); padding: 10px 0 10px 16px; }
 
     /* 테이블 스타일 */
@@ -156,34 +157,31 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 20px; 
     }
     .fab--return { background: var(--accent); color: #fff; display: none; border:none; }
-    /* [수정] 화살표 흐름 디자인 & 제목 스타일 */
+    /* 화살표 흐름 디자인 & 제목 스타일 */
     .flow-wrap {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 8px 6px;
-        margin-top: 4px;      /* ▲ 위쪽(제목과) 간격 좁힘 */
-        margin-bottom: 20px;  /* 아래쪽(다음 항목과) 간격 넓힘 */
+        margin-top: 4px;      
+        margin-bottom: 20px;  
         padding: 4px;
     }
     
-    /* [신규] 플로우 차트 제목 스타일 (강조됨) */
     .flow-title {
         font-size: 15px;
         font-weight: 800;
-        color: var(--ink);           /* 진한 잉크색 */
-        background: rgba(14, 165, 233, 0.1); /* 연한 파란 배경 (강조) */
+        color: var(--text-main);           
+        background: rgba(14, 165, 233, 0.1); 
         padding: 8px 12px;
         border-radius: 8px;
-        border-left: 4px solid var(--primary); /* 왼쪽에 굵은 파란 선 */
-        margin-top: 12px;            /* 위쪽 여백 */
-        margin-bottom: 0;            /* ▼ 아래쪽(플로우와) 간격 없앰 */
-        display: inline-block;       /* 텍스트 크기에 맞게 박스 형성 */
+        border-left: 4px solid var(--accent); 
+        margin-top: 12px;            
+        margin-bottom: 0;            
+        display: inline-block;       
     }
     
-    /* 기존 스타일 유지 */
     .flow-step {
-        /* ... 기존 flow-step 속성 그대로 ... */
         display: inline-flex; align-items: center;
         background: var(--card-bg); border: 1px solid var(--bd);
         padding: 8px 12px; border-radius: 12px;
@@ -192,14 +190,12 @@
         max-width: 100%; line-height: 1.3;
     }
     .flow-num {
-        /* ... 기존 flow-num 속성 그대로 ... */
         display: flex; align-items: center; justify-content: center;
         width: 20px; height: 20px; min-width: 20px; border-radius: 50%;
         background: var(--accent); color: #fff;
         font-size: 11px; font-weight: 800; margin-right: 8px; flex-shrink: 0;
     }
     .flow-arrow {
-        /* ... 기존 flow-arrow 속성 그대로 ... */
         color: var(--text-sub); font-size: 12px;
         display: flex; align-items: center; opacity: 0.6; margin: 0 2px;
     }
@@ -273,7 +269,7 @@
         let lastScrollPosition = 0;
 
         // 1. 데이터 로드
-        fetch('data.json')
+        fetch('docs.json') // [수정] 파일명 data.json -> docs.json 으로 가정 (실제 파일명 확인 필요)
             .then(res => res.json())
             .then(data => {
                 assignIds(data);
@@ -283,11 +279,12 @@
                 listContainer.innerHTML = buildTreeHTML(docData);
                 document.getElementById('docCount').textContent = `총 ${countItems(data)}건`;
                 
-                // 사이드바 목차 생성 (NEW)
+                // 사이드바 목차 생성
                 sidebarContent.innerHTML = buildSidebarHTML(docData);
             })
             .catch(err => {
-                listContainer.innerHTML = '<div style="text-align:center; padding:20px;">데이터 로드 실패</div>';
+                console.error(err);
+                listContainer.innerHTML = '<div style="text-align:center; padding:20px;">데이터 로드 실패 (파일명: docs.json 확인 필요)</div>';
             });
 
         function assignIds(items, prefix = 'node') {
@@ -311,92 +308,85 @@
                 html += `<summary>${item.title}</summary>`;
                 if (item.content) {
                     html += `<div class="content-box">`;
-                    // [수정된 로직] 제목, 화살표, 마크다운 표를 모두 처리하는 통합 코드
-const parts = splitContent(item.content);
-parts.forEach((part, pIdx) => {
-    const segmentId = `seg-${item.uid}-${pIdx}`;
-    let cleanPart = part.trim();
+                    
+                    const parts = splitContent(item.content);
+                    parts.forEach((part, pIdx) => {
+                        const segmentId = `seg-${item.uid}-${pIdx}`;
+                        let cleanPart = part.trim(); // [수정] trim 추가로 공백 제거 후 판별
 
-    // 1. 제목인 경우 (<b>로 시작하고 화살표/표가 아닌 경우)
-    if (cleanPart.startsWith('<b>') && !cleanPart.includes('→') && !cleanPart.startsWith('|')) {
-        const titleText = cleanPart.replace(/<\/?b>/g, ''); 
-        html += `<div id="${segmentId}" class="flow-title">${titleText}</div>`;
-    } 
-    // 2. 플로우 차트인 경우 ('→' 포함)
-    else if (cleanPart.includes('→')) {
-        const steps = cleanPart.split('→').map(s => s.trim());
-        let flowHtml = `<div class="flow-wrap">`;
-        steps.forEach((step, i) => {
-            flowHtml += `
-                <div class="flow-step">
-                    <span class="flow-num">${i + 1}</span>
-                    <span>${step}</span>
-                </div>`;
-            if (i < steps.length - 1) {
-                flowHtml += `<div class="flow-arrow">▶</div>`; 
-            }
-        });
-        flowHtml += `</div>`;
-        html += `<div id="${segmentId}" class="doc-segment" style="padding:0;">${flowHtml}</div>`;
-    }
-    // [기존 코드 위치] 3. 마크다운 표인 경우 ('|'로 시작)
-                    else if (cleanPart.startsWith('|')) {
-                        const lines = cleanPart.split('\n').filter(r => r.trim().length > 0);
-                        // 데이터 파싱 (구분선 제외, 양끝 공백 제거)
-                        const rows = lines.filter(l => !l.includes('---'))
-                                          .map(l => l.split('|').filter(c => c.trim() !== '').map(c => c.trim()));
+                        // 1. 제목인 경우 (<b>로 시작하고 화살표/표가 아닌 경우)
+                        if (cleanPart.startsWith('<b>') && !cleanPart.includes('→') && !cleanPart.startsWith('|')) {
+                            const titleText = cleanPart.replace(/<\/?b>/g, ''); 
+                            html += `<div id="${segmentId}" class="flow-title">${titleText}</div>`;
+                        } 
+                        // 2. 플로우 차트인 경우 ('→' 포함)
+                        else if (cleanPart.includes('→')) {
+                            const steps = cleanPart.split('→').map(s => s.trim());
+                            let flowHtml = `<div class="flow-wrap">`;
+                            steps.forEach((step, i) => {
+                                flowHtml += `
+                                    <div class="flow-step">
+                                        <span class="flow-num">${i + 1}</span>
+                                        <span>${step}</span>
+                                    </div>`;
+                                if (i < steps.length - 1) {
+                                    flowHtml += `<div class="flow-arrow">▶</div>`; 
+                                }
+                            });
+                            flowHtml += `</div>`;
+                            html += `<div id="${segmentId}" class="doc-segment" style="padding:0;">${flowHtml}</div>`;
+                        }
+                        // 3. 마크다운 표인 경우 ('|'로 시작)
+                        else if (cleanPart.startsWith('|')) {
+                            const lines = cleanPart.split('\n').filter(r => r.trim().length > 0);
+                            const rows = lines.filter(l => !l.includes('---'))
+                                              .map(l => l.split('|').filter(c => c.trim() !== '').map(c => c.trim()));
 
-                        if (rows.length === 0) return;
+                            if (rows.length === 0) return;
 
-                        // 헤더와 바디 분리
-                        const header = rows[0];
-                        const body = rows.slice(1);
+                            const header = rows[0];
+                            const body = rows.slice(1);
 
-                        // [자동 병합 로직]
-                        // meta 배열에 { rowspan: 1, hidden: false } 상태 저장
-                        const meta = body.map(row => row.map(() => ({ rowspan: 1, hidden: false })));
+                            const meta = body.map(row => row.map(() => ({ rowspan: 1, hidden: false })));
 
-                        // 세로(열) 방향으로 순회하며 위아래 텍스트가 같으면 병합
-                        for (let c = 0; c < header.length; c++) {
-                            for (let r = 1; r < body.length; r++) {
-                                if (body[r][c] === body[r-1][c] && body[r][c] !== '') {
-                                    // 바로 위가 아니라 병합의 '시작점(Root)'을 찾아 rowspan 증가
-                                    let root = r - 1;
-                                    while (root >= 0 && meta[root][c].hidden) { root--; }
-                                    
-                                    if (root >= 0) {
-                                        meta[root][c].rowspan += 1; // 시작점의 rowspan 증가
-                                        meta[r][c].hidden = true;   // 현재 셀은 숨김 처리
+                            for (let c = 0; c < header.length; c++) {
+                                for (let r = 1; r < body.length; r++) {
+                                    if (body[r][c] === body[r-1][c] && body[r][c] !== '') {
+                                        let root = r - 1;
+                                        while (root >= 0 && meta[root][c].hidden) { root--; }
+                                        
+                                        if (root >= 0) {
+                                            meta[root][c].rowspan += 1;
+                                            meta[r][c].hidden = true;
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        // HTML 생성
-                        let tableHtml = '<table><thead><tr>';
-                        tableHtml += header.map(h => `<th>${h}</th>`).join('');
-                        tableHtml += '</tr></thead><tbody>';
+                            let tableHtml = '<table><thead><tr>';
+                            tableHtml += header.map(h => `<th>${h}</th>`).join('');
+                            tableHtml += '</tr></thead><tbody>';
 
-                        body.forEach((row, rIdx) => {
-                            tableHtml += '<tr>';
-                            row.forEach((cell, cIdx) => {
-                                const m = meta[rIdx][cIdx];
-                                if (!m.hidden) {
-                                    const spanAttr = m.rowspan > 1 ? ` rowspan="${m.rowspan}"` : '';
-                                    tableHtml += `<td${spanAttr}>${cell}</td>`;
-                                }
+                            body.forEach((row, rIdx) => {
+                                tableHtml += '<tr>';
+                                row.forEach((cell, cIdx) => {
+                                    const m = meta[rIdx][cIdx];
+                                    if (!m.hidden) {
+                                        const spanAttr = m.rowspan > 1 ? ` rowspan="${m.rowspan}"` : '';
+                                        tableHtml += `<td${spanAttr}>${cell}</td>`;
+                                    }
+                                });
+                                tableHtml += '</tr>';
                             });
-                            tableHtml += '</tr>';
-                        });
-                        tableHtml += '</tbody></table>';
+                            tableHtml += '</tbody></table>';
 
-                        html += `<div id="${segmentId}" class="doc-segment">${tableHtml}</div>`;
-                    }
-    // 4. 그 외 일반 텍스트
-    else {
-        html += `<div id="${segmentId}" class="doc-segment">${part}</div>`;
-    }
-});
+                            html += `<div id="${segmentId}" class="doc-segment">${tableHtml}</div>`;
+                        }
+                        // 4. 그 외 일반 텍스트
+                        else {
+                            html += `<div id="${segmentId}" class="doc-segment">${part}</div>`;
+                        }
+                    });
                     html += `</div>`;
                 }
                 if (item.children) html += `<div class="sub-list">${buildTreeHTML(item.children)}</div>`;
@@ -405,7 +395,7 @@ parts.forEach((part, pIdx) => {
             return html;
         }
 
-        // 2-1. 사이드바 목차 생성 (NEW)
+        // 2-1. 사이드바 목차 생성
         function buildSidebarHTML(items) {
             let html = '<ul>';
             items.forEach(item => {
@@ -422,10 +412,12 @@ parts.forEach((part, pIdx) => {
         }
 
         function splitContent(content) {
+            // [수정] 빈 문자열 필터링 강화
+            if (!content) return [];
             return content.split(/<p[^>]*>|<\/p>|<div[^>]*>|<\/div>|<br\s*\/?>/i).map(s => s.trim()).filter(s => s.length > 0);
         }
 
-        // 3. 사이드바 제어 로직 (NEW)
+        // 3. 사이드바 제어 로직
         function toggleSidebar(open) {
             if (open) {
                 sidebar.classList.add('open');
@@ -440,11 +432,9 @@ parts.forEach((part, pIdx) => {
         closeSidebarBtn.addEventListener('click', () => toggleSidebar(false));
         sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
 
-        // 사이드바 항목 클릭 시 이동
         window.handleNavClick = function(targetId) {
-            toggleSidebar(false); // 사이드바 닫기
+            toggleSidebar(false); 
             
-            // 검색 중이었다면 메인 뷰로 복귀
             if (searchInput.value.trim().length > 0) {
                  searchInput.value = '';
                  showMainTree();
@@ -454,23 +444,19 @@ parts.forEach((part, pIdx) => {
 
             const targetEl = document.getElementById(targetId);
             if (targetEl) {
-                // 부모들이 닫혀있다면 열기
                 let parent = targetEl.parentElement;
                 while (parent) {
                     if (parent.tagName === 'DETAILS') parent.open = true;
                     parent = parent.parentElement;
                 }
-                // 타겟 자체도 details라면 열기
                 if (targetEl.tagName === 'DETAILS') targetEl.open = true;
 
-                // 스크롤 이동
                 const offset = 140; 
                 const elementPosition = targetEl.getBoundingClientRect().top + window.scrollY;
                 const offsetPosition = elementPosition - offset;
                 
                 window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
 
-                // 강조 효과 (summary에)
                 const summary = targetEl.querySelector('summary');
                 if(summary) {
                     summary.style.color = 'var(--accent)';
@@ -591,10 +577,12 @@ parts.forEach((part, pIdx) => {
             window.scrollTo({ top: lastScrollPosition, behavior: 'auto' });
         });
 
+        // [수정] HTML 태그 내부를 파괴하지 않도록 정규식 개선
         function highlightText(html, keywords) {
             let tempHtml = html;
             keywords.forEach(k => {
-                const regex = new RegExp(`(${escapeRegExp(k)})`, 'gi');
+                // (?![^<]*>) : 태그 안쪽( <... > )에 있는 텍스트는 매칭하지 않음
+                const regex = new RegExp(`(${escapeRegExp(k)})(?![^<]*>)`, 'gi');
                 tempHtml = tempHtml.replace(regex, '<span class="highlight">$1</span>');
             });
             return tempHtml;
